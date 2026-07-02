@@ -35,6 +35,9 @@ function unlock() {
 
 if (sessionStorage.getItem("kyokanUnlocked") === "1") {
   unlock();
+} else if (toHalfWidth(location.hash.slice(1)) === PASSWORD) {
+  // 保険用リンク: https://.../#kyokan5ki を直接開くと確実に解除できる
+  unlock();
 } else {
   const pwInput = document.getElementById("pwInput");
   pwInput.addEventListener("input", () => tryUnlock(pwInput.value));
