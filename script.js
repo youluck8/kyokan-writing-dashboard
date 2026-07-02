@@ -26,7 +26,7 @@ function tryUnlock(value) {
 }
 
 function unlock() {
-  gateEl.hidden = true;
+  gateEl.style.display = "none";
   dashboardEl.hidden = false;
   document.title = "共感ライティング 入会状況ダッシュボード";
   loadData();
