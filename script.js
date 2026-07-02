@@ -141,7 +141,10 @@ async function loadMemberSheet(sheetId, summaryElId, tbodyId) {
 }
 
 function cellValue(cell) {
-  if (!cell || cell.v === null || cell.v === undefined) return "";
+  if (!cell) return "";
+  // 日付セルは f (書式済み文字列) を優先。v は Date(y,m,d,...) という生の形式になるため。
+  if (cell.f !== undefined && cell.f !== null && cell.f !== "") return String(cell.f).trim();
+  if (cell.v === null || cell.v === undefined) return "";
   return String(cell.v).trim();
 }
 
