@@ -144,20 +144,21 @@ table.member-list td.name {
   width: 200px;
 }
 
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 12px;
+.unpaid-tag {
+  color: #b3261e;
   font-weight: 600;
 }
-.badge-paid {
-  background: #e3f5e9;
-  color: #1a7d3d;
+
+table.member-list td.notes {
+  color: #555;
 }
-.badge-unpaid {
-  background: #fdeaea;
-  color: #b3261e;
+
+.block.followup {
+  background: #fff6f0;
+  border-color: #f3c9a8;
+}
+.block.followup h2 {
+  color: #a4460e;
 }
 
 .block.highlight {

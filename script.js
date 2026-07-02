@@ -91,19 +91,20 @@ async function loadData() {
     console.error("main sheet load failed", err);
   }
 
-  const [premiumStats, basicStats] = await Promise.all([
-    loadMemberSheet(PREMIUM_SHEET_ID, "summary-premium", "tbody-premium-list").catch((err) => {
+  const [premium, basic] = await Promise.all([
+    loadMemberSheet(PREMIUM_SHEET_ID, "プレミアム", "summary-premium", "tbody-premium-list").catch((err) => {
       console.error("premium sheet load failed", err);
       return null;
     }),
-    loadMemberSheet(BASIC_SHEET_ID, "summary-basic", "tbody-basic-list").catch((err) => {
+    loadMemberSheet(BASIC_SHEET_ID, "ベーシック", "summary-basic", "tbody-basic-list").catch((err) => {
       console.error("basic sheet load failed", err);
       return null;
     }),
   ]);
 
-  if (premiumStats && basicStats) {
-    renderTopSummary(premiumStats, basicStats);
+  if (premium && basic) {
+    renderTopSummary(premium, basic);
+    renderFollowup(premium, basic);
   }
 }
 
@@ -129,8 +130,8 @@ function renderTopSummary(premiumStats, basicStats) {
     `${yen(totalRevenue)}（未入金${yen(totalPending)}）`;
 }
 
-// マイスピー転記シート: ユーザーID, 本登録完了日時, 姓, 名, メールアドレス
-async function loadMemberSheet(sheetId, summaryElId, tbodyId) {
+// マイスピー転記シート: ユーザーID, 本登録完了日時, 姓, 名, メールアドレス, 状況・メモ(F列, 手入力)
+async function loadMemberSheet(sheetId, courseLabel, summaryElId, tbodyId) {
   const rawRows = await fetchGvizRows(sheetId);
   const members = rawRows.map((r) => {
     const c = r.c || [];
@@ -138,6 +139,7 @@ async function loadMemberSheet(sheetId, summaryElId, tbodyId) {
       completedAt: cellValue(c[1]),
       lastName: cellValue(c[2]),
       firstName: cellValue(c[3]),
+      notes: cellValue(c[5]),
     };
   });
 
@@ -145,7 +147,7 @@ async function loadMemberSheet(sheetId, summaryElId, tbodyId) {
   const unpaidCount = members.length - paidCount;
 
   document.getElementById(summaryElId).textContent =
-    `合計 ${members.length}名 / 本登録完了 ${paidCount}名 / 未入金 ${unpaidCount}名`;
+    `合計 ${members.length}名 / 未入金 ${unpaidCount}名`;
 
   // 未入金の方をフォローアップしやすいよう先に表示
   const sorted = [...members].sort((a, b) => (a.completedAt ? 1 : 0) - (b.completedAt ? 1 : 0));
@@ -156,23 +158,57 @@ async function loadMemberSheet(sheetId, summaryElId, tbodyId) {
     tbody.appendChild(emptyRow(2));
   } else {
     sorted.forEach((m) => {
-      const tr = document.createElement("tr");
-      const tdName = document.createElement("td");
-      tdName.className = "name";
-      tdName.textContent = `${m.lastName} ${m.firstName}`.trim() || "-";
-      const tdStatus = document.createElement("td");
-      if (m.completedAt) {
-        tdStatus.innerHTML = `<span class="badge badge-paid">本登録完了</span> ${m.completedAt}`;
-      } else {
-        tdStatus.innerHTML = `<span class="badge badge-unpaid">未入金（申込のみ）</span>`;
-      }
-      tr.appendChild(tdName);
-      tr.appendChild(tdStatus);
-      tbody.appendChild(tr);
+      tbody.appendChild(memberRow(m));
     });
   }
 
-  return { paid: paidCount, unpaid: unpaidCount, total: members.length };
+  return { paid: paidCount, unpaid: unpaidCount, total: members.length, members, courseLabel };
+}
+
+function memberRow(m) {
+  const tr = document.createElement("tr");
+  const tdName = document.createElement("td");
+  tdName.className = "name";
+  const fullName = `${m.lastName} ${m.firstName}`.trim() || "-";
+  tdName.textContent = fullName;
+  if (!m.completedAt) {
+    const tag = document.createElement("span");
+    tag.className = "unpaid-tag";
+    tag.textContent = "（未入金）";
+    tdName.appendChild(document.createTextNode(" "));
+    tdName.appendChild(tag);
+  }
+  const tdNotes = document.createElement("td");
+  tdNotes.className = "notes";
+  tdNotes.textContent = m.notes || "-";
+  tr.appendChild(tdName);
+  tr.appendChild(tdNotes);
+  return tr;
+}
+
+function renderFollowup(premium, basic) {
+  const tbody = document.getElementById("tbody-followup-list");
+  tbody.innerHTML = "";
+  const unpaidAll = [
+    ...premium.members.filter((m) => !m.completedAt).map((m) => ({ ...m, course: premium.courseLabel })),
+    ...basic.members.filter((m) => !m.completedAt).map((m) => ({ ...m, course: basic.courseLabel })),
+  ];
+  if (unpaidAll.length === 0) {
+    tbody.appendChild(emptyRow(2));
+    return;
+  }
+  unpaidAll.forEach((m) => {
+    const tr = document.createElement("tr");
+    const tdName = document.createElement("td");
+    tdName.className = "name";
+    tdName.textContent = `${m.lastName} ${m.firstName}`.trim() + `（${m.course}）`;
+    const tdNotes = document.createElement("td");
+    tdNotes.className = "notes";
+    tdNotes.textContent = m.notes || "-";
+    tr.appendChild(tdName);
+    tr.appendChild(tdNotes);
+    tbody.appendChild(tr);
+  });
 }
 
 function cellValue(cell) {
