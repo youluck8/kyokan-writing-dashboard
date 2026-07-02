@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 Not Found</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="gate">
+  <h1>404</h1>
+  <p>Not Found</p>
+  <p class="small">The requested URL was not found on this server.</p>
+</div>
+
+<div id="dashboard" hidden>
+  <header>
+    <h1>共感ライティング 入会状況ダッシュボード</h1>
+    <p class="updated">最終更新: <span id="lastUpdated">-</span>（自動更新）</p>
+    <a id="sheetLink" class="sheet-link" href="#" target="_blank" rel="noopener">スプレッドシートを開いて編集する →</a>
+  </header>
+
+  <main>
+    <section class="block" id="block-継続">
+      <h2>継続者の入会状況</h2>
+      <table><tbody id="tbody-継続-status"></tbody></table>
+      <h3>今後のマーケ施策とスケジュール</h3>
+      <table class="plan">
+        <thead><tr><th>施策</th><th>スケジュール</th><th>担当</th><th>メモ</th></tr></thead>
+        <tbody id="tbody-継続-plan"></tbody>
+      </table>
+    </section>
+
+    <section class="block" id="block-新規">
+      <h2>新規の入会状況</h2>
+      <table><tbody id="tbody-新規-status"></tbody></table>
+      <h3>今後のマーケ施策とスケジュール</h3>
+      <table class="plan">
+        <thead><tr><th>施策</th><th>スケジュール</th><th>担当</th><th>メモ</th></tr></thead>
+        <tbody id="tbody-新規-plan"></tbody>
+      </table>
+    </section>
+
+    <section class="block" id="block-共通">
+      <h2>備考</h2>
+      <table><tbody id="tbody-共通-status"></tbody></table>
+    </section>
+  </main>
+
+  <footer>
+    <p>データはGoogleスプレッドシートと連動しています。内容の追加・修正はスプレッドシート側で直接行ってください。</p>
+  </footer>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

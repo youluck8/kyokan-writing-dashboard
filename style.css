@@ -1,0 +1,110 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  background: #fff;
+  color: #222;
+}
+
+/* --- Fake 404 screen --- */
+#gate {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #444;
+}
+#gate h1 {
+  font-size: 22px;
+  font-weight: 400;
+  margin: 0 0 8px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 12px;
+}
+#gate p {
+  font-size: 14px;
+  margin: 4px 0;
+}
+#gate p.small {
+  color: #888;
+  font-size: 12px;
+}
+
+/* --- Dashboard --- */
+#dashboard {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+header h1 {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+.updated {
+  color: #666;
+  font-size: 13px;
+  margin: 0 0 4px;
+}
+.sheet-link {
+  display: inline-block;
+  font-size: 13px;
+  color: #2a6df4;
+  text-decoration: none;
+  margin-bottom: 24px;
+}
+.sheet-link:hover { text-decoration: underline; }
+
+.block {
+  border: 1px solid #e3e3e3;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  background: #fafafa;
+}
+.block h2 {
+  font-size: 17px;
+  margin: 0 0 12px;
+  color: #111;
+}
+.block h3 {
+  font-size: 14px;
+  margin: 20px 0 8px;
+  color: #444;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 13px;
+}
+table td, table th {
+  border: 1px solid #e3e3e3;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+table th {
+  background: #f0f0f0;
+  font-weight: 600;
+}
+table td.label {
+  width: 160px;
+  color: #555;
+  background: #f7f7f7;
+  font-weight: 500;
+}
+
+footer {
+  color: #999;
+  font-size: 12px;
+  margin-top: 12px;
+}
+
+.empty-row td {
+  color: #aaa;
+  text-align: center;
+}
