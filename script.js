@@ -1,5 +1,7 @@
 // ==== 設定 ====
 const SHEET_ID = "15DN8OKsj7vlnj1AL9RbIF2M-SchyMYdA_iSloX6GZq0";
+const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
+const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const PASSWORD = "kyokan5ki";
 const REFRESH_INTERVAL_MS = 60 * 1000;
 
@@ -46,47 +48,96 @@ if (sessionStorage.getItem("kyokanUnlocked") === "1") {
 }
 
 // ==== データ取得・描画 ====
-function sheetLinkUrl() {
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+function sheetLinkUrl(sheetId) {
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+}
+
+async function fetchGvizRows(sheetId) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&t=${Date.now()}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`sheet fetch not ok: ${res.status}`);
+  const text = await res.text();
+  const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/);
+  if (!match) throw new Error("unexpected sheet response format");
+  const json = JSON.parse(match[1]);
+  return json.table.rows || [];
 }
 
 async function loadData() {
-  document.getElementById("sheetLink").href = sheetLinkUrl();
+  document.getElementById("sheetLink").href = sheetLinkUrl(SHEET_ID);
+  document.getElementById("premiumSheetLink").href = sheetLinkUrl(PREMIUM_SHEET_ID);
+  document.getElementById("basicSheetLink").href = sheetLinkUrl(BASIC_SHEET_ID);
 
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&t=${Date.now()}`;
-  let res;
   try {
-    res = await fetch(url);
+    const rawRows = await fetchGvizRows(SHEET_ID);
+    const rows = rawRows.map((r) => {
+      const c = r.c || [];
+      return {
+        updated: cellValue(c[0]),
+        category: cellValue(c[1]),
+        label: cellValue(c[2]),
+        status: cellValue(c[3]),
+        plan: cellValue(c[4]),
+        schedule: cellValue(c[5]),
+        owner: cellValue(c[6]),
+        memo: cellValue(c[7]),
+      };
+    });
+    render(rows);
   } catch (err) {
-    console.error("fetch failed", err);
-    return;
+    console.error("main sheet load failed", err);
   }
-  if (!res.ok) {
-    console.error("sheet fetch not ok", res.status);
-    return;
-  }
-  const text = await res.text();
-  const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/);
-  if (!match) {
-    console.error("unexpected sheet response format");
-    return;
-  }
-  const json = JSON.parse(match[1]);
-  const rows = (json.table.rows || []).map((r) => {
+
+  loadMemberSheet(PREMIUM_SHEET_ID, "summary-premium", "tbody-premium-list").catch((err) =>
+    console.error("premium sheet load failed", err)
+  );
+  loadMemberSheet(BASIC_SHEET_ID, "summary-basic", "tbody-basic-list").catch((err) =>
+    console.error("basic sheet load failed", err)
+  );
+}
+
+// マイスピー転記シート: ユーザーID, 本登録完了日時, 姓, 名, メールアドレス
+async function loadMemberSheet(sheetId, summaryElId, tbodyId) {
+  const rawRows = await fetchGvizRows(sheetId);
+  const members = rawRows.map((r) => {
     const c = r.c || [];
     return {
-      updated: cellValue(c[0]),
-      category: cellValue(c[1]),
-      label: cellValue(c[2]),
-      status: cellValue(c[3]),
-      plan: cellValue(c[4]),
-      schedule: cellValue(c[5]),
-      owner: cellValue(c[6]),
-      memo: cellValue(c[7]),
+      completedAt: cellValue(c[1]),
+      lastName: cellValue(c[2]),
+      firstName: cellValue(c[3]),
     };
   });
 
-  render(rows);
+  const paidCount = members.filter((m) => m.completedAt).length;
+  const unpaidCount = members.length - paidCount;
+
+  document.getElementById(summaryElId).textContent =
+    `合計 ${members.length}名 / 本登録完了 ${paidCount}名 / 未入金 ${unpaidCount}名`;
+
+  // 未入金の方をフォローアップしやすいよう先に表示
+  const sorted = [...members].sort((a, b) => (a.completedAt ? 1 : 0) - (b.completedAt ? 1 : 0));
+
+  const tbody = document.getElementById(tbodyId);
+  tbody.innerHTML = "";
+  if (sorted.length === 0) {
+    tbody.appendChild(emptyRow(2));
+    return;
+  }
+  sorted.forEach((m) => {
+    const tr = document.createElement("tr");
+    const tdName = document.createElement("td");
+    tdName.className = "name";
+    tdName.textContent = `${m.lastName} ${m.firstName}`.trim() || "-";
+    const tdStatus = document.createElement("td");
+    if (m.completedAt) {
+      tdStatus.innerHTML = `<span class="badge badge-paid">本登録完了</span> ${m.completedAt}`;
+    } else {
+      tdStatus.innerHTML = `<span class="badge badge-unpaid">未入金（申込のみ）</span>`;
+    }
+    tr.appendChild(tdName);
+    tr.appendChild(tdStatus);
+    tbody.appendChild(tr);
+  });
 }
 
 function cellValue(cell) {
