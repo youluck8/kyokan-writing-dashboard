@@ -32,6 +32,22 @@ body {
   color: #888;
   font-size: 12px;
 }
+#gate {
+  position: relative;
+}
+#pwInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px; /* iOSでズームさせないため */
+  cursor: default;
+}
 
 /* --- Dashboard --- */
 #dashboard {

@@ -7,13 +7,19 @@ const gateEl = document.getElementById("gate");
 const dashboardEl = document.getElementById("dashboard");
 
 // ==== 簡易パスワードゲート ====
-// 画面上には何も表示されない。どこでもよいのでパスワードを入力してEnterで解除。
+// 見た目は404ページ。ページ全体を覆う透明な入力欄をタップ(クリック)すると
+// スマホでもソフトウェアキーボードが開き、入力できる。
 // これはクライアント側の目隠しであり、真のアクセス制御ではありません。
-let buffer = "";
-let bufferResetTimer = null;
 
-function tryUnlock() {
-  if (buffer.includes(PASSWORD)) {
+function toHalfWidth(str) {
+  return str
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0))
+    .trim()
+    .toLowerCase();
+}
+
+function tryUnlock(value) {
+  if (toHalfWidth(value).includes(PASSWORD)) {
     sessionStorage.setItem("kyokanUnlocked", "1");
     unlock();
   }
@@ -30,19 +36,10 @@ function unlock() {
 if (sessionStorage.getItem("kyokanUnlocked") === "1") {
   unlock();
 } else {
-  document.addEventListener("keydown", (e) => {
-    if (e.key.length === 1) {
-      buffer += e.key;
-      if (buffer.length > 40) buffer = buffer.slice(-40);
-    }
-    if (e.key === "Enter") {
-      tryUnlock();
-    }
-    clearTimeout(bufferResetTimer);
-    bufferResetTimer = setTimeout(() => (buffer = ""), 10000);
-    // 入力のたびにも判定（Enter不要でも解除できるように）
-    tryUnlock();
-  });
+  const pwInput = document.getElementById("pwInput");
+  pwInput.addEventListener("input", () => tryUnlock(pwInput.value));
+  pwInput.focus();
+  gateEl.addEventListener("click", () => pwInput.focus());
 }
 
 // ==== データ取得・描画 ====
