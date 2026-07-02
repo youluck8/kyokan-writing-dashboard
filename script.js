@@ -2,8 +2,11 @@
 const SHEET_ID = "15DN8OKsj7vlnj1AL9RbIF2M-SchyMYdA_iSloX6GZq0";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
+const PREMIUM_PRICE = 180000;
+const BASIC_PRICE = 90000;
 const PASSWORD = "kyokan5ki";
 const REFRESH_INTERVAL_MS = 60 * 1000;
+const DASHBOARD_TITLE = "共感ライティング5期プロモーションダッシュボード";
 
 const gateEl = document.getElementById("gate");
 const dashboardEl = document.getElementById("dashboard");
@@ -30,7 +33,7 @@ function tryUnlock(value) {
 function unlock() {
   gateEl.style.display = "none";
   dashboardEl.hidden = false;
-  document.title = "共感ライティング 入会状況ダッシュボード";
+  document.title = DASHBOARD_TITLE;
   loadData();
   setInterval(loadData, REFRESH_INTERVAL_MS);
 }
@@ -88,12 +91,42 @@ async function loadData() {
     console.error("main sheet load failed", err);
   }
 
-  loadMemberSheet(PREMIUM_SHEET_ID, "summary-premium", "tbody-premium-list").catch((err) =>
-    console.error("premium sheet load failed", err)
-  );
-  loadMemberSheet(BASIC_SHEET_ID, "summary-basic", "tbody-basic-list").catch((err) =>
-    console.error("basic sheet load failed", err)
-  );
+  const [premiumStats, basicStats] = await Promise.all([
+    loadMemberSheet(PREMIUM_SHEET_ID, "summary-premium", "tbody-premium-list").catch((err) => {
+      console.error("premium sheet load failed", err);
+      return null;
+    }),
+    loadMemberSheet(BASIC_SHEET_ID, "summary-basic", "tbody-basic-list").catch((err) => {
+      console.error("basic sheet load failed", err);
+      return null;
+    }),
+  ]);
+
+  if (premiumStats && basicStats) {
+    renderTopSummary(premiumStats, basicStats);
+  }
+}
+
+function yen(n) {
+  return `${n.toLocaleString("ja-JP")}円`;
+}
+
+function renderTopSummary(premiumStats, basicStats) {
+  const totalPaid = premiumStats.paid + basicStats.paid;
+  document.getElementById("kpi-count").textContent =
+    `${totalPaid}名（プレミアム${premiumStats.paid}名、ベーシック${basicStats.paid}名）`;
+
+  const premiumRevenue = premiumStats.paid * PREMIUM_PRICE;
+  const basicRevenue = basicStats.paid * BASIC_PRICE;
+  const totalRevenue = premiumRevenue + basicRevenue;
+  document.getElementById("kpi-revenue-by-course").textContent =
+    `${yen(totalRevenue)}（プレミアム${yen(premiumRevenue)}、ベーシック${yen(basicRevenue)}）`;
+
+  const premiumPending = premiumStats.unpaid * PREMIUM_PRICE;
+  const basicPending = basicStats.unpaid * BASIC_PRICE;
+  const totalPending = premiumPending + basicPending;
+  document.getElementById("kpi-revenue-total").textContent =
+    `${yen(totalRevenue)}（未入金${yen(totalPending)}）`;
 }
 
 // マイスピー転記シート: ユーザーID, 本登録完了日時, 姓, 名, メールアドレス
@@ -121,23 +154,25 @@ async function loadMemberSheet(sheetId, summaryElId, tbodyId) {
   tbody.innerHTML = "";
   if (sorted.length === 0) {
     tbody.appendChild(emptyRow(2));
-    return;
+  } else {
+    sorted.forEach((m) => {
+      const tr = document.createElement("tr");
+      const tdName = document.createElement("td");
+      tdName.className = "name";
+      tdName.textContent = `${m.lastName} ${m.firstName}`.trim() || "-";
+      const tdStatus = document.createElement("td");
+      if (m.completedAt) {
+        tdStatus.innerHTML = `<span class="badge badge-paid">本登録完了</span> ${m.completedAt}`;
+      } else {
+        tdStatus.innerHTML = `<span class="badge badge-unpaid">未入金（申込のみ）</span>`;
+      }
+      tr.appendChild(tdName);
+      tr.appendChild(tdStatus);
+      tbody.appendChild(tr);
+    });
   }
-  sorted.forEach((m) => {
-    const tr = document.createElement("tr");
-    const tdName = document.createElement("td");
-    tdName.className = "name";
-    tdName.textContent = `${m.lastName} ${m.firstName}`.trim() || "-";
-    const tdStatus = document.createElement("td");
-    if (m.completedAt) {
-      tdStatus.innerHTML = `<span class="badge badge-paid">本登録完了</span> ${m.completedAt}`;
-    } else {
-      tdStatus.innerHTML = `<span class="badge badge-unpaid">未入金（申込のみ）</span>`;
-    }
-    tr.appendChild(tdName);
-    tr.appendChild(tdStatus);
-    tbody.appendChild(tr);
-  });
+
+  return { paid: paidCount, unpaid: unpaidCount, total: members.length };
 }
 
 function cellValue(cell) {
