@@ -1,5 +1,6 @@
 // ==== 設定 ====
 const SHEET_ID = "1wDGrV4EcFwtUGWGaQQzOKqUPf_jd7SJ1M8RmRk_-ais";
+const MAIN_TAB_NAME = "サマリー・備考";
 const PROMO_TAB_NAME = "プロモーション計画";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
@@ -93,7 +94,7 @@ async function loadData() {
   try {
     // 1枚目のタブ(サマリー・備考)と「プロモーション計画」タブの両方を読み込んで統合する
     const [mainRaw, promoRaw] = await Promise.all([
-      fetchGvizRows(SHEET_ID),
+      fetchGvizRows(SHEET_ID, MAIN_TAB_NAME),
       fetchGvizRows(SHEET_ID, PROMO_TAB_NAME).catch((err) => {
         console.error("promo tab load failed (未作成の可能性があります)", err);
         return [];
