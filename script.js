@@ -88,7 +88,7 @@ function toPlanRows(rawRows) {
   });
 }
 
-// プロモーション計画・5期継続者に向けてタブ用: 更新日,カテゴリ,重要度,進捗ステータス,今後の施策,スケジュール,担当,結果,メモ
+// プロモーション計画・5期スケジュールタブ用: 更新日,カテゴリ,重要度,進捗ステータス,今後の施策,スケジュール,担当,メモ
 function toPromoRows(rawRows) {
   return rawRows.map((r) => {
     const c = r.c || [];
@@ -100,8 +100,7 @@ function toPromoRows(rawRows) {
       plan: cellValue(c[4]),
       schedule: cellValue(c[5]),
       owner: cellValue(c[6]),
-      result: cellValue(c[7]),
-      memo: cellValue(c[8]),
+      memo: cellValue(c[7]),
     };
   });
 }
@@ -157,7 +156,7 @@ function buildPromoListItems(container, rows) {
     }
 
     // 結果・メモはラベルなしでそのまま表示(グレーの補足欄)
-    const noteText = [r.result, r.memo].filter(Boolean).join(" ／ ");
+    const noteText = r.memo;
     if (noteText) {
       const noteDiv = document.createElement("div");
       noteDiv.className = "promo-note";
