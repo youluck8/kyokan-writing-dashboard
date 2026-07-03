@@ -141,6 +141,22 @@ function renderTopSummary(premiumStats, basicStats) {
   const totalPending = premiumPending + basicPending;
   document.getElementById("kpi-revenue-total").textContent =
     `${yen(totalRevenue)}（未入金${yen(totalPending)}）`;
+
+  const recentPremium = countRecentlyPaid(premiumStats.members, 7);
+  const recentBasic = countRecentlyPaid(basicStats.members, 7);
+  const recentRevenue = recentPremium * PREMIUM_PRICE + recentBasic * BASIC_PRICE;
+  document.getElementById("kpi-recent-change").textContent =
+    `直近7日間で本登録完了 +${recentPremium + recentBasic}名（プレミアム+${recentPremium}名、ベーシック+${recentBasic}名）／ 売上+${yen(recentRevenue)}`;
+}
+
+// 本登録完了日時が直近days日以内の人数をカウント(継続の新規入金ペースを見るため)
+function countRecentlyPaid(members, days) {
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  return members.filter((m) => {
+    if (!m.completedAt) return false;
+    const d = new Date(m.completedAt.replace(" ", "T"));
+    return !isNaN(d.getTime()) && d.getTime() >= cutoff;
+  }).length;
 }
 
 // マイスピー転記シート: ユーザーID, 本登録完了日時, 姓, 名, メールアドレス, 状況・メモ(F列, 手入力)
