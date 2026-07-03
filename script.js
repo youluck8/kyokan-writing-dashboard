@@ -9,6 +9,9 @@ const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const PREMIUM_PRICE = 180000;
 const BASIC_PRICE = 90000;
 const TOTAL_4KI_COUNT = 108; // 4期全体110名からインターン生2名を除いた実質対象数
+// 新規入会のデータソースがまだ無いため、当面0固定。データソースができ次第、実データに差し替える。
+const NEW_MEMBER_COUNT = 0;
+const NEW_REVENUE = 0;
 const PASSWORD = "kyokan5ki";
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const DASHBOARD_TITLE = "共感5期ダッシュボード";
@@ -272,19 +275,28 @@ function renderTopSummary(premiumStats, basicStats) {
     `継続率 ${retentionRate}%（プレミアム${premiumStats.total}名、ベーシック${basicStats.total}名）`
   );
 
+  renderKpiValue("kpi-new-count", `${NEW_MEMBER_COUNT}名`, "");
+
   const premiumRevenue = premiumStats.paid * PREMIUM_PRICE;
   const basicRevenue = basicStats.paid * BASIC_PRICE;
-  const totalRevenue = premiumRevenue + basicRevenue;
-  renderKpiValue(
-    "kpi-revenue-by-course",
-    yen(totalRevenue),
-    `（プレミアム${yen(premiumRevenue)}、ベーシック${yen(basicRevenue)}）`
-  );
-
+  const continueRevenue = premiumRevenue + basicRevenue;
   const premiumPending = premiumStats.unpaid * PREMIUM_PRICE;
   const basicPending = basicStats.unpaid * BASIC_PRICE;
   const totalPending = premiumPending + basicPending;
-  renderKpiValue("kpi-revenue-total", yen(totalRevenue), `（未入金${yen(totalPending)}）`);
+  renderKpiValue(
+    "kpi-revenue-by-course",
+    yen(continueRevenue),
+    `（プレミアム${yen(premiumRevenue)}、ベーシック${yen(basicRevenue)}）未入金${yen(totalPending)}`
+  );
+
+  renderKpiValue("kpi-new-revenue", yen(NEW_REVENUE), "");
+
+  const grandTotalRevenue = continueRevenue + NEW_REVENUE;
+  renderKpiValue(
+    "kpi-revenue-total",
+    yen(grandTotalRevenue),
+    `（継続${yen(continueRevenue)}、新規${yen(NEW_REVENUE)}）`
+  );
 }
 
 // マイスピー転記シート: ユーザーID, 本登録完了日時, 姓, 名, メールアドレス, 状況・メモ(F列, 手入力)
