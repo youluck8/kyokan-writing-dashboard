@@ -42,9 +42,28 @@
 
   <section class="block">
     <h2>プロモーション計画（継続）</h2>
-    <p class="note">スプレッドシート（カテゴリ=継続）を編集すると、ここと下部の詳細テーブル両方に反映されます。</p>
+    <p class="note">スプレッドシート「プロモーション計画」タブ（カテゴリ=継続）を編集すると反映されます。</p>
     <ul class="promo-list" id="promo-継続-list"></ul>
-    <h3>5期本講座スケジュール（全て土曜日）</h3>
+  </section>
+
+  <section class="block">
+    <h2>プロモーション計画（新規）</h2>
+    <p class="note">継続とは別軸で、外部からの新規入会を増やすための施策です。スプレッドシート「プロモーション計画」タブ（カテゴリ=新規）を編集すると反映されます。</p>
+    <ul class="promo-list" id="promo-新規-list"></ul>
+  </section>
+
+  <hr class="section-divider">
+
+  <main>
+    <section class="block" id="block-共通">
+      <h2>備考</h2>
+      <table><tbody id="tbody-共通-status"></tbody></table>
+    </section>
+  </main>
+
+  <section class="block">
+    <h2>5期の日程</h2>
+    <p class="note">継続・新規のプロモーションとは別の、5期本講座そのもののスケジュールです。</p>
     <ul class="schedule-list">
       <li>9月26日</li>
       <li>10月24日</li>
@@ -54,41 +73,6 @@
       <li>2月27日</li>
     </ul>
   </section>
-
-  <section class="block">
-    <h2>プロモーション計画（新規）</h2>
-    <p class="note">継続とは別軸で、外部からの新規入会を増やすための施策です。スプレッドシート（カテゴリ=新規）を編集すると反映されます。</p>
-    <ul class="promo-list" id="promo-新規-list"></ul>
-  </section>
-
-  <hr class="section-divider">
-
-  <main>
-    <section class="block" id="block-継続">
-      <h2>継続者の入会状況（詳細）</h2>
-      <table><tbody id="tbody-継続-status"></tbody></table>
-      <h3>今後のマーケ施策とスケジュール</h3>
-      <table class="plan">
-        <thead><tr><th>施策</th><th>スケジュール</th><th>担当</th><th>メモ</th></tr></thead>
-        <tbody id="tbody-継続-plan"></tbody>
-      </table>
-    </section>
-
-    <section class="block" id="block-新規">
-      <h2>新規の入会状況（詳細）</h2>
-      <table><tbody id="tbody-新規-status"></tbody></table>
-      <h3>今後のマーケ施策とスケジュール</h3>
-      <table class="plan">
-        <thead><tr><th>施策</th><th>スケジュール</th><th>担当</th><th>メモ</th></tr></thead>
-        <tbody id="tbody-新規-plan"></tbody>
-      </table>
-    </section>
-
-    <section class="block" id="block-共通">
-      <h2>備考</h2>
-      <table><tbody id="tbody-共通-status"></tbody></table>
-    </section>
-  </main>
 
   <section class="block" id="block-meibo">
     <h2>継続者名簿</h2>
@@ -107,6 +91,6 @@
   </footer>
 </div>
 
-<script src="script.js?v=11"></script>
+<script src="script.js?v=12"></script>
 </body>
 </html>
