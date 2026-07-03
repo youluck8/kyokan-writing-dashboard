@@ -152,14 +152,17 @@ function buildPromoListItems(container, rows) {
       li.appendChild(impSpan);
     }
 
-    // 特別扱い以外の列のうち、最初に値が入っている列をタイトル扱いにする
-    const otherKeys = Object.keys(r).filter((k) => !SPECIAL_HEADERS.includes(k) && r[k]);
+    // 特別扱い以外の列のうち、最初に値が入っている列をタイトル扱いにする。
+    // 「担当」はタイトル行に直接添える(別行に並べない)。
+    const otherKeys = Object.keys(r).filter((k) => !SPECIAL_HEADERS.includes(k) && k !== "担当" && r[k]);
     const titleKey = otherKeys[0];
     const restKeys = otherKeys.slice(1);
 
     const textSpan = document.createElement("span");
     textSpan.className = "promo-text";
-    textSpan.textContent = titleKey ? r[titleKey] : "";
+    let titleText = titleKey ? r[titleKey] : "";
+    if (r["担当"]) titleText += ` 担当:${r["担当"]}`;
+    textSpan.textContent = titleText;
     li.appendChild(textSpan);
 
     if (progress) {
