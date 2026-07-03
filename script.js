@@ -71,6 +71,7 @@ async function fetchGvizRows(sheetId, sheetName) {
   return json.table.rows || [];
 }
 
+// サマリー・備考タブ用(旧スキーマ): 更新日,カテゴリ,項目,現状,今後の施策,スケジュール,担当,メモ
 function toPlanRows(rawRows) {
   return rawRows.map((r) => {
     const c = r.c || [];
@@ -83,14 +84,39 @@ function toPlanRows(rawRows) {
       schedule: cellValue(c[5]),
       owner: cellValue(c[6]),
       memo: cellValue(c[7]),
-      progress: cellValue(c[8]), // 進捗ステータス: 未実施/着手/完了
-      result: cellValue(c[9]), // 結果
     };
   });
 }
 
-// 表示順: 着手 → 未実施(空欄含む) → 完了
-const PROGRESS_ORDER = { 着手: 0, 未実施: 1, 完了: 2 };
+// プロモーション計画・5期継続者に向けてタブ用: 更新日,カテゴリ,重要度,進捗ステータス,今後の施策,スケジュール,担当,結果,メモ
+function toPromoRows(rawRows) {
+  return rawRows.map((r) => {
+    const c = r.c || [];
+    return {
+      updated: cellValue(c[0]),
+      category: cellValue(c[1]),
+      importance: cellValue(c[2]), // 高/中/低
+      progress: cellValue(c[3]), // 未着手/着手/完了
+      plan: cellValue(c[4]),
+      schedule: cellValue(c[5]),
+      owner: cellValue(c[6]),
+      result: cellValue(c[7]),
+      memo: cellValue(c[8]),
+    };
+  });
+}
+
+const IMPORTANCE_ORDER = { 高: 0, 中: 1, 低: 2 };
+
+// 未着手/着手(実施中)を上、完了を下。各グループ内は重要度(高→中→低)で並び替え
+function sortPromoRows(rows) {
+  return [...rows].sort((a, b) => {
+    const doneA = a.progress === "完了" ? 1 : 0;
+    const doneB = b.progress === "完了" ? 1 : 0;
+    if (doneA !== doneB) return doneA - doneB;
+    return (IMPORTANCE_ORDER[a.importance] ?? 1) - (IMPORTANCE_ORDER[b.importance] ?? 1);
+  });
+}
 
 function buildPromoListItems(container, rows) {
   container.innerHTML = "";
@@ -102,12 +128,16 @@ function buildPromoListItems(container, rows) {
     container.appendChild(li);
     return;
   }
-  const sorted = [...usable].sort(
-    (a, b) => (PROGRESS_ORDER[a.progress] ?? 1) - (PROGRESS_ORDER[b.progress] ?? 1)
-  );
-  sorted.forEach((r) => {
+  sortPromoRows(usable).forEach((r) => {
     const li = document.createElement("li");
     if (r.progress === "完了") li.classList.add("promo-done");
+
+    if (r.importance) {
+      const impSpan = document.createElement("span");
+      impSpan.className = `promo-importance importance-${r.importance}`;
+      impSpan.textContent = r.importance;
+      li.appendChild(impSpan);
+    }
 
     const textSpan = document.createElement("span");
     textSpan.className = "promo-text";
@@ -120,7 +150,7 @@ function buildPromoListItems(container, rows) {
     if (r.progress) {
       const statusSpan = document.createElement("span");
       statusSpan.className = `promo-status status-${r.progress}`;
-      statusSpan.textContent = ` [${r.progress}]`;
+      statusSpan.textContent = r.progress;
       li.appendChild(statusSpan);
     }
 
@@ -148,23 +178,28 @@ async function loadData() {
   document.getElementById("basicSheetLink").href = sheetLinkUrl(BASIC_SHEET_ID);
 
   try {
-    // 1枚目のタブ(サマリー・備考)と「プロモーション計画」タブの両方を読み込んで統合する
-    const [mainRaw, promoRaw] = await Promise.all([
-      fetchGvizRows(SHEET_ID, MAIN_TAB_NAME),
-      fetchGvizRows(SHEET_ID, PROMO_TAB_NAME).catch((err) => {
-        console.error("promo tab load failed (未作成の可能性があります)", err);
-        return [];
-      }),
-    ]);
-    render([...toPlanRows(mainRaw), ...toPlanRows(promoRaw)]);
+    const mainRaw = await fetchGvizRows(SHEET_ID, MAIN_TAB_NAME);
+    render(toPlanRows(mainRaw));
   } catch (err) {
     console.error("main sheet load failed", err);
   }
 
   try {
+    const promoRaw = await fetchGvizRows(SHEET_ID, PROMO_TAB_NAME);
+    const promoRows = toPromoRows(promoRaw);
+    const continueList = document.getElementById("promo-継続-list");
+    const newList = document.getElementById("promo-新規-list");
+    if (continueList) buildPromoListItems(continueList, promoRows.filter((r) => r.category === "継続"));
+    if (newList) buildPromoListItems(newList, promoRows.filter((r) => r.category === "新規"));
+    updateLastUpdated(promoRows.map((r) => r.updated));
+  } catch (err) {
+    console.error("promo tab load failed (未作成の可能性があります)", err);
+  }
+
+  try {
     const gokiRaw = await fetchGvizRows(SHEET_ID, GOKI_TAB_NAME);
     const gokiList = document.getElementById("goki-list");
-    if (gokiList) buildPromoListItems(gokiList, toPlanRows(gokiRaw));
+    if (gokiList) buildPromoListItems(gokiList, toPromoRows(gokiRaw));
   } catch (err) {
     console.error("5期継続者に向けて tab load failed (未作成の可能性があります)", err);
   }
@@ -289,61 +324,38 @@ function cellValue(cell) {
 }
 
 function render(rows) {
-  const categories = ["継続", "新規", "共通"];
-  let latestDate = "";
+  const catRows = rows.filter((r) => r.category === "共通" && (r.label || r.status || r.plan));
+  const statusRows = catRows.filter((r) => !r.plan && !r.schedule);
 
-  categories.forEach((cat) => {
-    const catRows = rows.filter((r) => r.category === cat && (r.label || r.status || r.plan));
-    const statusRows = catRows.filter((r) => !r.plan && !r.schedule);
-    const planRows = catRows.filter((r) => r.plan || r.schedule);
-
-    catRows.forEach((r) => {
-      if (r.updated && r.updated > latestDate) latestDate = r.updated;
-    });
-
-    const statusBody = document.getElementById(`tbody-${cat}-status`);
-    if (statusBody) {
-      statusBody.innerHTML = "";
-      if (statusRows.length === 0) {
-        statusBody.appendChild(emptyRow(2));
-      } else {
-        statusRows.forEach((r) => {
-          const tr = document.createElement("tr");
-          const tdLabel = document.createElement("td");
-          tdLabel.className = "label";
-          tdLabel.textContent = r.label || "-";
-          const tdVal = document.createElement("td");
-          tdVal.textContent = [r.status, r.memo].filter(Boolean).join(" / ") || "-";
-          tr.appendChild(tdLabel);
-          tr.appendChild(tdVal);
-          statusBody.appendChild(tr);
-        });
-      }
+  const statusBody = document.getElementById("tbody-共通-status");
+  if (statusBody) {
+    statusBody.innerHTML = "";
+    if (statusRows.length === 0) {
+      statusBody.appendChild(emptyRow(2));
+    } else {
+      statusRows.forEach((r) => {
+        const tr = document.createElement("tr");
+        const tdLabel = document.createElement("td");
+        tdLabel.className = "label";
+        tdLabel.textContent = r.label || "-";
+        const tdVal = document.createElement("td");
+        tdVal.textContent = [r.status, r.memo].filter(Boolean).join(" / ") || "-";
+        tr.appendChild(tdLabel);
+        tr.appendChild(tdVal);
+        statusBody.appendChild(tr);
+      });
     }
+  }
 
-    const planBody = document.getElementById(`tbody-${cat}-plan`);
-    if (planBody) {
-      planBody.innerHTML = "";
-      if (planRows.length === 0) {
-        planBody.appendChild(emptyRow(4));
-      } else {
-        planRows.forEach((r) => {
-          const tr = document.createElement("tr");
-          [r.plan, r.schedule, r.owner, r.memo].forEach((val) => {
-            const td = document.createElement("td");
-            td.textContent = val || "-";
-            tr.appendChild(td);
-          });
-          planBody.appendChild(tr);
-        });
-      }
-    }
+  updateLastUpdated(catRows.map((r) => r.updated));
+}
 
-    const promoList = document.getElementById(`promo-${cat}-list`);
-    if (promoList) buildPromoListItems(promoList, planRows);
-  });
-
-  document.getElementById("lastUpdated").textContent = latestDate || "-";
+// 各タブから取得した日付候補の中から最新のものだけを反映する(既存表示より古ければ無視)
+function updateLastUpdated(dateStrings) {
+  const el = document.getElementById("lastUpdated");
+  const current = el.textContent === "-" ? "" : el.textContent;
+  const latest = [current, ...dateStrings].filter(Boolean).sort().pop();
+  if (latest) el.textContent = latest;
 }
 
 function emptyRow(colspan) {
