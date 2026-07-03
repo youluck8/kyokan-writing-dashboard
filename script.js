@@ -9,7 +9,7 @@ const PREMIUM_PRICE = 180000;
 const BASIC_PRICE = 90000;
 const PASSWORD = "kyokan5ki";
 const REFRESH_INTERVAL_MS = 60 * 1000;
-const DASHBOARD_TITLE = "共感ライティング5期プロモーションダッシュボード";
+const DASHBOARD_TITLE = "共感5期ダッシュボード";
 
 const gateEl = document.getElementById("gate");
 const dashboardEl = document.getElementById("dashboard");
