@@ -16,81 +16,98 @@
 </div>
 
 <div id="dashboard" hidden>
-  <header>
-    <h1>共感ライティング5期プロモーションダッシュボード</h1>
-    <p class="updated">最終更新: <span id="lastUpdated">-</span>（自動更新）</p>
-    <a id="sheetLink" class="sheet-link" href="#" target="_blank" rel="noopener">スプレッドシートを開いて編集する →</a>
+<div class="page">
+
+  <header class="top">
+    <div class="top-main">
+      <h1>共感ライティング5期プロモーションダッシュボード</h1>
+      <p class="lead">最終更新: <span id="lastUpdated">-</span>（1分毎に自動更新）</p>
+      <a id="sheetLink" class="sheet-link" href="#" target="_blank" rel="noopener">スプレッドシートを開いて編集する →</a>
+    </div>
+    <div class="summary" id="kpi-summary">
+      <div class="summary-item accent-blue">
+        <div class="summary-label">5期継続者数</div>
+        <div class="summary-value" id="kpi-count">読み込み中...</div>
+      </div>
+      <div class="summary-item accent-green">
+        <div class="summary-label">売上</div>
+        <div class="summary-value" id="kpi-revenue-by-course">読み込み中...</div>
+      </div>
+      <div class="summary-item accent-gold">
+        <div class="summary-label">合計売上</div>
+        <div class="summary-value" id="kpi-revenue-total">読み込み中...</div>
+      </div>
+    </div>
   </header>
+  <p class="note top-note">※継続者名簿は末尾に記載しています</p>
 
-  <section class="block highlight">
-    <h2>5期継続者数・売上</h2>
-    <table class="kpi">
-      <tbody>
-        <tr><td class="label">5期継続者数</td><td id="kpi-count">読み込み中...</td></tr>
-        <tr><td class="label">売上</td><td id="kpi-revenue-by-course">読み込み中...</td></tr>
-        <tr><td class="label">合計売上</td><td id="kpi-revenue-total">読み込み中...</td></tr>
-      </tbody>
-    </table>
-    <p class="note">※継続者名簿は末尾に記載しています</p>
-  </section>
-
-  <section class="block">
-    <h2>プロモーション計画（継続）</h2>
-    <p class="note">スプレッドシート「プロモーション計画」タブ（カテゴリ=継続）を編集すると反映されます。</p>
+  <section class="section">
+    <div class="section-head">
+      <h2>プロモーション計画（継続）</h2>
+      <span class="section-note">スプレッドシート「プロモーション計画」タブ（カテゴリ=継続）を編集すると反映</span>
+    </div>
     <ul class="promo-list" id="promo-継続-list"></ul>
   </section>
 
-  <section class="block">
-    <h2>プロモーション計画（新規）</h2>
-    <p class="note">継続とは別軸で、外部からの新規入会を増やすための施策です。スプレッドシート「プロモーション計画」タブ（カテゴリ=新規）を編集すると反映されます。</p>
+  <section class="section">
+    <div class="section-head">
+      <h2>プロモーション計画（新規）</h2>
+      <span class="section-note">外部からの新規入会を増やす施策（カテゴリ=新規）</span>
+    </div>
     <ul class="promo-list" id="promo-新規-list"></ul>
   </section>
 
-  <section class="block">
-    <h2>5期継続者に向けて</h2>
-    <p class="note">プロモーションではなく、5期を進めていく上での運営タスクなどの項目です。スプレッドシート「5期継続者に向けて」タブを編集すると反映されます。</p>
+  <section class="section">
+    <div class="section-head">
+      <h2>5期継続者に向けて</h2>
+      <span class="section-note">プロモーションではなく5期運営タスク</span>
+    </div>
     <ul class="promo-list" id="goki-list"></ul>
   </section>
 
-  <hr class="section-divider">
-
-  <main>
-    <section class="block" id="block-共通">
-      <h2>備考</h2>
-      <table><tbody id="tbody-共通-status"></tbody></table>
-    </section>
-  </main>
-
-  <section class="block">
-    <h2>5期の日程</h2>
-    <p class="note">継続・新規のプロモーションとは別の、5期本講座そのもののスケジュールです。</p>
-    <ul class="schedule-list">
-      <li>9月26日</li>
-      <li>10月24日</li>
-      <li>11月28日</li>
-      <li>12月26日</li>
-      <li>1月23日</li>
-      <li>2月27日</li>
-    </ul>
+  <section class="section">
+    <div class="section-head">
+      <h2>5期の日程</h2>
+      <span class="section-note">本講座そのもののスケジュール（全て土曜日）</span>
+    </div>
+    <div class="badge-row">
+      <span class="badge">9月26日</span>
+      <span class="badge">10月24日</span>
+      <span class="badge">11月28日</span>
+      <span class="badge">12月26日</span>
+      <span class="badge">1月23日</span>
+      <span class="badge">2月27日</span>
+    </div>
   </section>
 
-  <section class="block" id="block-meibo">
-    <h2>継続者名簿</h2>
+  <section class="section" id="block-共通">
+    <div class="section-head">
+      <h2>備考</h2>
+    </div>
+    <table><tbody id="tbody-共通-status"></tbody></table>
+  </section>
+
+  <section class="section" id="block-meibo">
+    <div class="section-head">
+      <h2>継続者名簿</h2>
+    </div>
 
     <h3>プレミアムコース <a id="premiumSheetLink" class="sheet-link small-link" href="#" target="_blank" rel="noopener">シートを開く →</a></h3>
-    <p class="summary" id="summary-premium">読み込み中...</p>
+    <p class="roster-summary" id="summary-premium">読み込み中...</p>
     <table class="member-list"><tbody id="tbody-premium-list"></tbody></table>
 
     <h3>ベーシックコース <a id="basicSheetLink" class="sheet-link small-link" href="#" target="_blank" rel="noopener">シートを開く →</a></h3>
-    <p class="summary" id="summary-basic">読み込み中...</p>
+    <p class="roster-summary" id="summary-basic">読み込み中...</p>
     <table class="member-list"><tbody id="tbody-basic-list"></tbody></table>
   </section>
 
   <footer>
     <p>データはGoogleスプレッドシートと連動しています。継続者数・売上・名簿は自動計算、プロモーション計画もスプレッドシート編集で反映されます。</p>
   </footer>
+
+</div>
 </div>
 
-<script src="script.js?v=16"></script>
+<script src="script.js?v=17"></script>
 </body>
 </html>
