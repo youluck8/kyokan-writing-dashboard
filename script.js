@@ -88,7 +88,7 @@ function toPlanRows(rawRows) {
   });
 }
 
-// プロモーション計画・5期スケジュールタブ用: 更新日,カテゴリ,重要度,進捗ステータス,今後の施策,スケジュール,担当,メモ
+// プロモーション計画タブ用: 更新日,カテゴリ,重要度,進捗ステータス,今後の施策,スケジュール,担当,メモ
 function toPromoRows(rawRows) {
   return rawRows.map((r) => {
     const c = r.c || [];
@@ -101,6 +101,23 @@ function toPromoRows(rawRows) {
       schedule: cellValue(c[5]),
       owner: cellValue(c[6]),
       memo: cellValue(c[7]),
+    };
+  });
+}
+
+// 5期スケジュールタブ用(重要度列なし): 更新日,カテゴリ,進捗ステータス,今後の施策,スケジュール,担当,メモ
+function toGokiRows(rawRows) {
+  return rawRows.map((r) => {
+    const c = r.c || [];
+    return {
+      updated: cellValue(c[0]),
+      category: cellValue(c[1]),
+      importance: "",
+      progress: cellValue(c[2]), // 未着手/着手/完了
+      plan: cellValue(c[3]),
+      schedule: cellValue(c[4]),
+      owner: cellValue(c[5]),
+      memo: cellValue(c[6]),
     };
   });
 }
@@ -194,7 +211,7 @@ async function loadData() {
   try {
     const gokiRaw = await fetchGvizRows(SHEET_ID, GOKI_TAB_NAME);
     const gokiList = document.getElementById("goki-list");
-    if (gokiList) buildPromoListItems(gokiList, toPromoRows(gokiRaw));
+    if (gokiList) buildPromoListItems(gokiList, toGokiRows(gokiRaw));
   } catch (err) {
     console.error("5期スケジュール tab load failed (未作成の可能性があります)", err);
   }
