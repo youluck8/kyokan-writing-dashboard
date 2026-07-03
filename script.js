@@ -180,7 +180,15 @@ function buildPromoListItems(container, rows) {
   });
 }
 
+// 見出しは常にタブ名の設定(定数)と同じ文字列にする。表示名とフェッチ先のズレを防ぐため。
+function applyTabTitles() {
+  document.getElementById("promo-継続-title").textContent = PROMO_CONTINUE_TAB_NAME;
+  document.getElementById("promo-新規-title").textContent = PROMO_NEW_TAB_NAME;
+  document.getElementById("goki-title").textContent = GOKI_TAB_NAME;
+}
+
 async function loadData() {
+  applyTabTitles();
   document.getElementById("sheetLink").href = sheetLinkUrl(SHEET_ID);
   document.getElementById("premiumSheetLink").href = sheetLinkUrl(PREMIUM_SHEET_ID);
   document.getElementById("basicSheetLink").href = sheetLinkUrl(BASIC_SHEET_ID);
