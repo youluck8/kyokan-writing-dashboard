@@ -2,6 +2,7 @@
 const SHEET_ID = "1wDGrV4EcFwtUGWGaQQzOKqUPf_jd7SJ1M8RmRk_-ais";
 const MAIN_TAB_NAME = "サマリー・備考";
 const PROMO_TAB_NAME = "プロモーション計画";
+const GOKI_TAB_NAME = "5期継続者に向けて";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const PREMIUM_PRICE = 180000;
@@ -82,7 +83,62 @@ function toPlanRows(rawRows) {
       schedule: cellValue(c[5]),
       owner: cellValue(c[6]),
       memo: cellValue(c[7]),
+      progress: cellValue(c[8]), // 進捗ステータス: 未実施/着手/完了
+      result: cellValue(c[9]), // 結果
     };
+  });
+}
+
+// 表示順: 着手 → 未実施(空欄含む) → 完了
+const PROGRESS_ORDER = { 着手: 0, 未実施: 1, 完了: 2 };
+
+function buildPromoListItems(container, rows) {
+  container.innerHTML = "";
+  const usable = rows.filter((r) => r.plan || r.schedule);
+  if (usable.length === 0) {
+    const li = document.createElement("li");
+    li.className = "empty-item";
+    li.textContent = "スプレッドシートに施策を追加してください";
+    container.appendChild(li);
+    return;
+  }
+  const sorted = [...usable].sort(
+    (a, b) => (PROGRESS_ORDER[a.progress] ?? 1) - (PROGRESS_ORDER[b.progress] ?? 1)
+  );
+  sorted.forEach((r) => {
+    const li = document.createElement("li");
+    if (r.progress === "完了") li.classList.add("promo-done");
+
+    const textSpan = document.createElement("span");
+    textSpan.className = "promo-text";
+    const parts = [r.plan];
+    if (r.schedule) parts.push(`（${r.schedule}）`);
+    if (r.owner) parts.push(` 担当:${r.owner}`);
+    textSpan.textContent = parts.join("");
+    li.appendChild(textSpan);
+
+    if (r.progress) {
+      const statusSpan = document.createElement("span");
+      statusSpan.className = `promo-status status-${r.progress}`;
+      statusSpan.textContent = ` [${r.progress}]`;
+      li.appendChild(statusSpan);
+    }
+
+    if (r.result) {
+      const resultSpan = document.createElement("span");
+      resultSpan.className = "promo-result";
+      resultSpan.textContent = `結果: ${r.result}`;
+      li.appendChild(document.createElement("br"));
+      li.appendChild(resultSpan);
+    }
+
+    if (r.memo) {
+      const memoSpan = document.createElement("span");
+      memoSpan.className = "promo-memo";
+      memoSpan.textContent = ` ${r.memo}`;
+      li.appendChild(memoSpan);
+    }
+    container.appendChild(li);
   });
 }
 
@@ -103,6 +159,14 @@ async function loadData() {
     render([...toPlanRows(mainRaw), ...toPlanRows(promoRaw)]);
   } catch (err) {
     console.error("main sheet load failed", err);
+  }
+
+  try {
+    const gokiRaw = await fetchGvizRows(SHEET_ID, GOKI_TAB_NAME);
+    const gokiList = document.getElementById("goki-list");
+    if (gokiList) buildPromoListItems(gokiList, toPlanRows(gokiRaw));
+  } catch (err) {
+    console.error("5期継続者に向けて tab load failed (未作成の可能性があります)", err);
   }
 
   const [premium, basic] = await Promise.all([
@@ -142,22 +206,6 @@ function renderTopSummary(premiumStats, basicStats) {
   const totalPending = premiumPending + basicPending;
   document.getElementById("kpi-revenue-total").textContent =
     `${yen(totalRevenue)}（未入金${yen(totalPending)}）`;
-
-  const recentPremium = countRecentlyPaid(premiumStats.members, 7);
-  const recentBasic = countRecentlyPaid(basicStats.members, 7);
-  const recentRevenue = recentPremium * PREMIUM_PRICE + recentBasic * BASIC_PRICE;
-  document.getElementById("kpi-recent-change").textContent =
-    `直近7日間で本登録完了 +${recentPremium + recentBasic}名（プレミアム+${recentPremium}名、ベーシック+${recentBasic}名）／ 売上+${yen(recentRevenue)}`;
-}
-
-// 本登録完了日時が直近days日以内の人数をカウント(継続の新規入金ペースを見るため)
-function countRecentlyPaid(members, days) {
-  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-  return members.filter((m) => {
-    if (!m.completedAt) return false;
-    const d = new Date(m.completedAt.replace(" ", "T"));
-    return !isNaN(d.getTime()) && d.getTime() >= cutoff;
-  }).length;
 }
 
 // マイスピー転記シート: ユーザーID, 本登録完了日時, 姓, 名, メールアドレス, 状況・メモ(F列, 手入力)
@@ -292,30 +340,7 @@ function render(rows) {
     }
 
     const promoList = document.getElementById(`promo-${cat}-list`);
-    if (promoList) {
-      promoList.innerHTML = "";
-      if (planRows.length === 0) {
-        const li = document.createElement("li");
-        li.className = "empty-item";
-        li.textContent = "スプレッドシートに施策を追加してください";
-        promoList.appendChild(li);
-      } else {
-        planRows.forEach((r) => {
-          const li = document.createElement("li");
-          const parts = [r.plan];
-          if (r.schedule) parts.push(`（${r.schedule}）`);
-          if (r.owner) parts.push(` 担当:${r.owner}`);
-          li.textContent = parts.join("");
-          if (r.memo) {
-            const memoSpan = document.createElement("span");
-            memoSpan.className = "promo-memo";
-            memoSpan.textContent = ` ${r.memo}`;
-            li.appendChild(memoSpan);
-          }
-          promoList.appendChild(li);
-        });
-      }
-    }
+    if (promoList) buildPromoListItems(promoList, planRows);
   });
 
   document.getElementById("lastUpdated").textContent = latestDate || "-";

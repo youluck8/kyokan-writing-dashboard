@@ -201,3 +201,41 @@ table.kpi td.label {
   list-style: none;
   margin-left: -20px;
 }
+
+.promo-list li {
+  margin-bottom: 10px;
+}
+
+.promo-status {
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.promo-status.status-着手 {
+  color: #0a7a3d;
+}
+.promo-status.status-未実施 {
+  color: #888;
+}
+.promo-status.status-完了 {
+  color: #aaa;
+}
+
+.promo-result {
+  display: inline-block;
+  font-weight: 700;
+  background: #fff3cd;
+  color: #6b4e00;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.promo-list li.promo-done {
+  opacity: 0.75;
+}
+.promo-list li.promo-done .promo-text {
+  text-decoration: line-through;
+  color: #999;
+}
