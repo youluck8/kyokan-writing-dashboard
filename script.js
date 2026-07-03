@@ -59,7 +59,7 @@ function sheetLinkUrl(sheetId) {
   return `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
 }
 
-async function fetchGvizRows(sheetId, sheetName) {
+async function fetchGvizTable(sheetId, sheetName) {
   const sheetParam = sheetName ? `&sheet=${encodeURIComponent(sheetName)}` : "";
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json${sheetParam}&t=${Date.now()}`;
   const res = await fetch(url);
@@ -69,7 +69,25 @@ async function fetchGvizRows(sheetId, sheetName) {
   if (!match) throw new Error("unexpected sheet response format");
   const json = JSON.parse(match[1]);
   if (json.status === "error") throw new Error(`gviz error: ${JSON.stringify(json.errors)}`);
-  return json.table.rows || [];
+  return json.table || { cols: [], rows: [] };
+}
+
+async function fetchGvizRows(sheetId, sheetName) {
+  return (await fetchGvizTable(sheetId, sheetName)).rows || [];
+}
+
+// 1行目の見出しをそのままキーにしたオブジェクトへ変換する。
+// 列を追加/変更/削除しても、見出し名がそのまま反映されるようにするため、固定の列番号には依存しない。
+function toDynamicRows(table) {
+  const headers = (table.cols || []).map((c) => (c.label || "").trim());
+  return (table.rows || []).map((r) => {
+    const obj = {};
+    (r.c || []).forEach((cell, i) => {
+      const key = headers[i];
+      if (key) obj[key] = cellValue(cell);
+    });
+    return obj;
+  });
 }
 
 // サマリー・備考タブ用(旧スキーマ): 更新日,カテゴリ,項目,現状,今後の施策,スケジュール,担当,メモ
@@ -89,54 +107,29 @@ function toPlanRows(rawRows) {
   });
 }
 
-// プロモーション計画継続/新規タブ用(タブ自体でカテゴリを分けるためカテゴリ列は無し):
-// 更新日,重要度,進捗ステータス,今後の施策,スケジュール,担当,メモ
-function toPromoRows(rawRows) {
-  return rawRows.map((r) => {
-    const c = r.c || [];
-    return {
-      updated: cellValue(c[0]),
-      importance: cellValue(c[1]), // 高/中/低
-      progress: cellValue(c[2]), // 未着手/着手/完了
-      plan: cellValue(c[3]),
-      schedule: cellValue(c[4]),
-      owner: cellValue(c[5]),
-      memo: cellValue(c[6]),
-    };
-  });
-}
-
-// 5期スケジュールタブ用(重要度・カテゴリ列なし): 更新日,進捗ステータス,今後の施策,スケジュール,担当,メモ
-function toGokiRows(rawRows) {
-  return rawRows.map((r) => {
-    const c = r.c || [];
-    return {
-      updated: cellValue(c[0]),
-      importance: "",
-      progress: cellValue(c[1]), // 未着手/着手/完了
-      plan: cellValue(c[2]),
-      schedule: cellValue(c[3]),
-      owner: cellValue(c[4]),
-      memo: cellValue(c[5]),
-    };
-  });
-}
-
+// 重要度・進捗ステータス・更新日・カテゴリは特別扱いする列名。それ以外は見出し名がそのまま表示される。
+const SPECIAL_HEADERS = ["更新日", "カテゴリ", "重要度", "進捗ステータス"];
 const IMPORTANCE_ORDER = { 高: 0, 中: 1, 低: 2 };
+
+function hasContent(row) {
+  return Object.keys(row).some((k) => !SPECIAL_HEADERS.includes(k) && row[k]);
+}
 
 // 未着手/着手(実施中)を上、完了を下。各グループ内は重要度(高→中→低)で並び替え
 function sortPromoRows(rows) {
   return [...rows].sort((a, b) => {
-    const doneA = a.progress === "完了" ? 1 : 0;
-    const doneB = b.progress === "完了" ? 1 : 0;
+    const doneA = a["進捗ステータス"] === "完了" ? 1 : 0;
+    const doneB = b["進捗ステータス"] === "完了" ? 1 : 0;
     if (doneA !== doneB) return doneA - doneB;
-    return (IMPORTANCE_ORDER[a.importance] ?? 1) - (IMPORTANCE_ORDER[b.importance] ?? 1);
+    return (IMPORTANCE_ORDER[a["重要度"]] ?? 1) - (IMPORTANCE_ORDER[b["重要度"]] ?? 1);
   });
 }
 
+// 見出し(1行目)をそのままラベルとして使い、値がある列だけを列挙して表示する。
+// 列を追加/変更しても、コードを直さずに自動で反映される。
 function buildPromoListItems(container, rows) {
   container.innerHTML = "";
-  const usable = rows.filter((r) => r.plan || r.schedule);
+  const usable = rows.filter(hasContent);
   if (usable.length === 0) {
     const li = document.createElement("li");
     li.className = "empty-item";
@@ -145,41 +138,44 @@ function buildPromoListItems(container, rows) {
     return;
   }
   sortPromoRows(usable).forEach((r) => {
+    const importance = r["重要度"];
+    const progress = r["進捗ステータス"];
     const li = document.createElement("li");
     // 重要度で枠・背景色を変える(完了の場合はグレーアウトを優先)
-    if (r.importance) li.classList.add(`importance-${r.importance}`);
-    if (r.progress === "完了") li.classList.add("promo-done");
+    if (importance) li.classList.add(`importance-${importance}`);
+    if (progress === "完了") li.classList.add("promo-done");
 
-    if (r.importance) {
+    if (importance) {
       const impSpan = document.createElement("span");
-      impSpan.className = `promo-importance importance-badge-${r.importance}`;
-      impSpan.textContent = r.importance;
+      impSpan.className = `promo-importance importance-badge-${importance}`;
+      impSpan.textContent = importance;
       li.appendChild(impSpan);
     }
 
+    // 特別扱い以外の列のうち、最初に値が入っている列をタイトル扱いにする
+    const otherKeys = Object.keys(r).filter((k) => !SPECIAL_HEADERS.includes(k) && r[k]);
+    const titleKey = otherKeys[0];
+    const restKeys = otherKeys.slice(1);
+
     const textSpan = document.createElement("span");
     textSpan.className = "promo-text";
-    const parts = [r.plan];
-    if (r.schedule) parts.push(`（${r.schedule}）`);
-    if (r.owner) parts.push(` 担当:${r.owner}`);
-    textSpan.textContent = parts.join("");
+    textSpan.textContent = titleKey ? r[titleKey] : "";
     li.appendChild(textSpan);
 
-    if (r.progress) {
+    if (progress) {
       const statusSpan = document.createElement("span");
-      statusSpan.className = `promo-status status-${r.progress}`;
-      statusSpan.textContent = r.progress;
+      statusSpan.className = `promo-status status-${progress}`;
+      statusSpan.textContent = progress;
       li.appendChild(statusSpan);
     }
 
-    // 結果・メモはラベルなしでそのまま表示(グレーの補足欄)
-    const noteText = r.memo;
-    if (noteText) {
+    restKeys.forEach((key) => {
       const noteDiv = document.createElement("div");
       noteDiv.className = "promo-note";
-      noteDiv.textContent = noteText;
+      noteDiv.textContent = `${key}: ${r[key]}`;
       li.appendChild(noteDiv);
-    }
+    });
+
     container.appendChild(li);
   });
 }
@@ -196,31 +192,32 @@ async function loadData() {
     console.error("main sheet load failed", err);
   }
 
-  const [continueRaw, newRaw] = await Promise.all([
-    fetchGvizRows(SHEET_ID, PROMO_CONTINUE_TAB_NAME).catch((err) => {
-      console.error("プロモーション計画継続 tab load failed (未作成の可能性があります)", err);
-      return [];
+  const emptyTable = { cols: [], rows: [] };
+  const [continueTable, newTable, gokiTable] = await Promise.all([
+    fetchGvizTable(SHEET_ID, PROMO_CONTINUE_TAB_NAME).catch((err) => {
+      console.error("【継続】プロモ tab load failed (未作成の可能性があります)", err);
+      return emptyTable;
     }),
-    fetchGvizRows(SHEET_ID, PROMO_NEW_TAB_NAME).catch((err) => {
-      console.error("プロモーション計画新規 tab load failed (未作成の可能性があります)", err);
-      return [];
+    fetchGvizTable(SHEET_ID, PROMO_NEW_TAB_NAME).catch((err) => {
+      console.error("【新規】プロモ tab load failed (未作成の可能性があります)", err);
+      return emptyTable;
+    }),
+    fetchGvizTable(SHEET_ID, GOKI_TAB_NAME).catch((err) => {
+      console.error("5期スケジュール tab load failed (未作成の可能性があります)", err);
+      return emptyTable;
     }),
   ]);
-  const continueRows = toPromoRows(continueRaw);
-  const newRows = toPromoRows(newRaw);
+  const continueRows = toDynamicRows(continueTable);
+  const newRows = toDynamicRows(newTable);
+  const gokiRows = toDynamicRows(gokiTable);
+
   const continueList = document.getElementById("promo-継続-list");
   const newList = document.getElementById("promo-新規-list");
+  const gokiList = document.getElementById("goki-list");
   if (continueList) buildPromoListItems(continueList, continueRows);
   if (newList) buildPromoListItems(newList, newRows);
-  updateLastUpdated([...continueRows, ...newRows].map((r) => r.updated));
-
-  try {
-    const gokiRaw = await fetchGvizRows(SHEET_ID, GOKI_TAB_NAME);
-    const gokiList = document.getElementById("goki-list");
-    if (gokiList) buildPromoListItems(gokiList, toGokiRows(gokiRaw));
-  } catch (err) {
-    console.error("5期スケジュール tab load failed (未作成の可能性があります)", err);
-  }
+  if (gokiList) buildPromoListItems(gokiList, gokiRows);
+  updateLastUpdated([...continueRows, ...newRows, ...gokiRows].map((r) => r["更新日"]));
 
   const [premium, basic] = await Promise.all([
     loadMemberSheet(PREMIUM_SHEET_ID, "プレミアム", "summary-premium", "tbody-premium-list").catch((err) => {
