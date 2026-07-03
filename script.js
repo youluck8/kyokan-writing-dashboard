@@ -8,6 +8,7 @@ const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const PREMIUM_PRICE = 180000;
 const BASIC_PRICE = 90000;
+const TOTAL_4KI_COUNT = 108; // 4期全体110名からインターン生2名を除いた実質対象数
 const PASSWORD = "kyokan5ki";
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const DASHBOARD_TITLE = "共感5期ダッシュボード";
@@ -262,12 +263,13 @@ function renderKpiValue(elId, mainText, breakdownText) {
 }
 
 function renderTopSummary(premiumStats, basicStats) {
-  // 継続者数は未入金の申込者も含めた人数(=申込総数)
+  // 継続者数は未入金の申込者も含めた人数(=申込総数)。分母は4期対象者108名(110名からインターン2名を除く)
   const totalCount = premiumStats.total + basicStats.total;
+  const retentionRate = ((totalCount / TOTAL_4KI_COUNT) * 100).toFixed(1);
   renderKpiValue(
     "kpi-count",
-    `${totalCount}名`,
-    `（プレミアム${premiumStats.total}名、ベーシック${basicStats.total}名）`
+    `${totalCount}名 / ${TOTAL_4KI_COUNT}名中`,
+    `継続率 ${retentionRate}%（プレミアム${premiumStats.total}名、ベーシック${basicStats.total}名）`
   );
 
   const premiumRevenue = premiumStats.paid * PREMIUM_PRICE;
