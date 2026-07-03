@@ -1,7 +1,8 @@
 // ==== 設定 ====
 const SHEET_ID = "1wDGrV4EcFwtUGWGaQQzOKqUPf_jd7SJ1M8RmRk_-ais";
 const MAIN_TAB_NAME = "サマリー・備考";
-const PROMO_TAB_NAME = "プロモーション計画";
+const PROMO_CONTINUE_TAB_NAME = "プロモーション計画継続";
+const PROMO_NEW_TAB_NAME = "プロモーション計画新規";
 const GOKI_TAB_NAME = "5期スケジュール";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
@@ -88,36 +89,35 @@ function toPlanRows(rawRows) {
   });
 }
 
-// プロモーション計画タブ用: 更新日,カテゴリ,重要度,進捗ステータス,今後の施策,スケジュール,担当,メモ
+// プロモーション計画継続/新規タブ用(タブ自体でカテゴリを分けるためカテゴリ列は無し):
+// 更新日,重要度,進捗ステータス,今後の施策,スケジュール,担当,メモ
 function toPromoRows(rawRows) {
   return rawRows.map((r) => {
     const c = r.c || [];
     return {
       updated: cellValue(c[0]),
-      category: cellValue(c[1]),
-      importance: cellValue(c[2]), // 高/中/低
-      progress: cellValue(c[3]), // 未着手/着手/完了
-      plan: cellValue(c[4]),
-      schedule: cellValue(c[5]),
-      owner: cellValue(c[6]),
-      memo: cellValue(c[7]),
-    };
-  });
-}
-
-// 5期スケジュールタブ用(重要度列なし): 更新日,カテゴリ,進捗ステータス,今後の施策,スケジュール,担当,メモ
-function toGokiRows(rawRows) {
-  return rawRows.map((r) => {
-    const c = r.c || [];
-    return {
-      updated: cellValue(c[0]),
-      category: cellValue(c[1]),
-      importance: "",
+      importance: cellValue(c[1]), // 高/中/低
       progress: cellValue(c[2]), // 未着手/着手/完了
       plan: cellValue(c[3]),
       schedule: cellValue(c[4]),
       owner: cellValue(c[5]),
       memo: cellValue(c[6]),
+    };
+  });
+}
+
+// 5期スケジュールタブ用(重要度・カテゴリ列なし): 更新日,進捗ステータス,今後の施策,スケジュール,担当,メモ
+function toGokiRows(rawRows) {
+  return rawRows.map((r) => {
+    const c = r.c || [];
+    return {
+      updated: cellValue(c[0]),
+      importance: "",
+      progress: cellValue(c[1]), // 未着手/着手/完了
+      plan: cellValue(c[2]),
+      schedule: cellValue(c[3]),
+      owner: cellValue(c[4]),
+      memo: cellValue(c[5]),
     };
   });
 }
@@ -196,17 +196,23 @@ async function loadData() {
     console.error("main sheet load failed", err);
   }
 
-  try {
-    const promoRaw = await fetchGvizRows(SHEET_ID, PROMO_TAB_NAME);
-    const promoRows = toPromoRows(promoRaw);
-    const continueList = document.getElementById("promo-継続-list");
-    const newList = document.getElementById("promo-新規-list");
-    if (continueList) buildPromoListItems(continueList, promoRows.filter((r) => r.category === "継続"));
-    if (newList) buildPromoListItems(newList, promoRows.filter((r) => r.category === "新規"));
-    updateLastUpdated(promoRows.map((r) => r.updated));
-  } catch (err) {
-    console.error("promo tab load failed (未作成の可能性があります)", err);
-  }
+  const [continueRaw, newRaw] = await Promise.all([
+    fetchGvizRows(SHEET_ID, PROMO_CONTINUE_TAB_NAME).catch((err) => {
+      console.error("プロモーション計画継続 tab load failed (未作成の可能性があります)", err);
+      return [];
+    }),
+    fetchGvizRows(SHEET_ID, PROMO_NEW_TAB_NAME).catch((err) => {
+      console.error("プロモーション計画新規 tab load failed (未作成の可能性があります)", err);
+      return [];
+    }),
+  ]);
+  const continueRows = toPromoRows(continueRaw);
+  const newRows = toPromoRows(newRaw);
+  const continueList = document.getElementById("promo-継続-list");
+  const newList = document.getElementById("promo-新規-list");
+  if (continueList) buildPromoListItems(continueList, continueRows);
+  if (newList) buildPromoListItems(newList, newRows);
+  updateLastUpdated([...continueRows, ...newRows].map((r) => r.updated));
 
   try {
     const gokiRaw = await fetchGvizRows(SHEET_ID, GOKI_TAB_NAME);
