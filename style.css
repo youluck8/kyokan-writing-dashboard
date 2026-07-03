@@ -270,6 +270,7 @@ table.member-list td.notes { color: #555; }
 }
 .promo-list li {
   border: 1px solid var(--line);
+  border-left: 5px solid var(--line);
   border-radius: var(--radius);
   background: var(--soft);
   padding: 16px 18px;
@@ -278,6 +279,21 @@ table.member-list td.notes { color: #555; }
 .promo-list li.empty-item {
   color: #aaa;
   text-align: center;
+  border-left-color: var(--line);
+}
+
+/* 重要度でカード全体の枠・背景を変える(高=赤系/上, 中=黄系/中, 低=青系/下) */
+.promo-list li.importance-高 {
+  border-left-color: var(--red);
+  background: var(--red-soft);
+}
+.promo-list li.importance-中 {
+  border-left-color: var(--gold);
+  background: var(--gold-soft);
+}
+.promo-list li.importance-低 {
+  border-left-color: var(--blue);
+  background: var(--blue-soft);
 }
 
 .promo-importance {
@@ -288,21 +304,11 @@ table.member-list td.notes { color: #555; }
   font-size: 12px;
   font-weight: 800;
   margin-right: 8px;
-  background: var(--gray-soft);
-  color: var(--gray);
+  background: rgba(255, 255, 255, 0.6);
 }
-.promo-importance.importance-高 {
-  background: var(--red-soft);
-  color: var(--red);
-}
-.promo-importance.importance-中 {
-  background: var(--blue-soft);
-  color: var(--blue);
-}
-.promo-importance.importance-低 {
-  background: var(--gray-soft);
-  color: var(--gray);
-}
+.promo-importance.importance-badge-高 { color: var(--red); }
+.promo-importance.importance-badge-中 { color: var(--gold); }
+.promo-importance.importance-badge-低 { color: var(--blue); }
 
 .promo-text {
   font-weight: 600;
@@ -332,26 +338,19 @@ table.member-list td.notes { color: #555; }
   color: var(--muted);
 }
 
-.promo-result {
-  display: inline-block;
-  font-weight: 700;
-  background: var(--gold-soft);
-  color: var(--gold);
-  padding: 4px 10px;
-  border-radius: 999px;
+.promo-note {
+  color: #4a4f57;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 8px 10px;
+  border-radius: 6px;
   margin-top: 8px;
   font-size: 13px;
 }
 
-.promo-memo {
-  display: block;
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 6px;
-}
-
 .promo-list li.promo-done {
-  background: #fafafa;
+  border-left-color: var(--line) !important;
+  background: #fafafa !important;
   opacity: 0.65;
 }
 .promo-list li.promo-done .promo-text {

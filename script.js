@@ -2,7 +2,7 @@
 const SHEET_ID = "1wDGrV4EcFwtUGWGaQQzOKqUPf_jd7SJ1M8RmRk_-ais";
 const MAIN_TAB_NAME = "サマリー・備考";
 const PROMO_TAB_NAME = "プロモーション計画";
-const GOKI_TAB_NAME = "5期継続者に向けて";
+const GOKI_TAB_NAME = "5期に向けて";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const PREMIUM_PRICE = 180000;
@@ -130,11 +130,13 @@ function buildPromoListItems(container, rows) {
   }
   sortPromoRows(usable).forEach((r) => {
     const li = document.createElement("li");
+    // 重要度で枠・背景色を変える(完了の場合はグレーアウトを優先)
+    if (r.importance) li.classList.add(`importance-${r.importance}`);
     if (r.progress === "完了") li.classList.add("promo-done");
 
     if (r.importance) {
       const impSpan = document.createElement("span");
-      impSpan.className = `promo-importance importance-${r.importance}`;
+      impSpan.className = `promo-importance importance-badge-${r.importance}`;
       impSpan.textContent = r.importance;
       li.appendChild(impSpan);
     }
@@ -154,19 +156,13 @@ function buildPromoListItems(container, rows) {
       li.appendChild(statusSpan);
     }
 
-    if (r.result) {
-      const resultSpan = document.createElement("span");
-      resultSpan.className = "promo-result";
-      resultSpan.textContent = `結果: ${r.result}`;
-      li.appendChild(document.createElement("br"));
-      li.appendChild(resultSpan);
-    }
-
-    if (r.memo) {
-      const memoSpan = document.createElement("span");
-      memoSpan.className = "promo-memo";
-      memoSpan.textContent = ` ${r.memo}`;
-      li.appendChild(memoSpan);
+    // 結果・メモはラベルなしでそのまま表示(グレーの補足欄)
+    const noteText = [r.result, r.memo].filter(Boolean).join(" ／ ");
+    if (noteText) {
+      const noteDiv = document.createElement("div");
+      noteDiv.className = "promo-note";
+      noteDiv.textContent = noteText;
+      li.appendChild(noteDiv);
     }
     container.appendChild(li);
   });
@@ -201,7 +197,7 @@ async function loadData() {
     const gokiList = document.getElementById("goki-list");
     if (gokiList) buildPromoListItems(gokiList, toPromoRows(gokiRaw));
   } catch (err) {
-    console.error("5期継続者に向けて tab load failed (未作成の可能性があります)", err);
+    console.error("5期に向けて tab load failed (未作成の可能性があります)", err);
   }
 
   const [premium, basic] = await Promise.all([
