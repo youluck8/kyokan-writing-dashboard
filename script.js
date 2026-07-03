@@ -2,7 +2,7 @@
 const SHEET_ID = "1wDGrV4EcFwtUGWGaQQzOKqUPf_jd7SJ1M8RmRk_-ais";
 const MAIN_TAB_NAME = "サマリー・備考";
 const PROMO_TAB_NAME = "プロモーション計画";
-const GOKI_TAB_NAME = "5期に向けて";
+const GOKI_TAB_NAME = "5期スケジュール";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const PREMIUM_PRICE = 180000;
@@ -197,7 +197,7 @@ async function loadData() {
     const gokiList = document.getElementById("goki-list");
     if (gokiList) buildPromoListItems(gokiList, toPromoRows(gokiRaw));
   } catch (err) {
-    console.error("5期に向けて tab load failed (未作成の可能性があります)", err);
+    console.error("5期スケジュール tab load failed (未作成の可能性があります)", err);
   }
 
   const [premium, basic] = await Promise.all([
