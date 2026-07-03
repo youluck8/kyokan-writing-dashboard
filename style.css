@@ -153,14 +153,6 @@ table.member-list td.notes {
   color: #555;
 }
 
-.block.followup {
-  background: #fff6f0;
-  border-color: #f3c9a8;
-}
-.block.followup h2 {
-  color: #a4460e;
-}
-
 .block.highlight {
   background: #f0f6ff;
   border-color: #cddffb;

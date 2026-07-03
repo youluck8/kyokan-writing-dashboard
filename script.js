@@ -117,7 +117,6 @@ async function loadData() {
 
   if (premium && basic) {
     renderTopSummary(premium, basic);
-    renderFollowup(premium, basic);
   }
 }
 
@@ -214,31 +213,6 @@ function memberRow(m) {
   tr.appendChild(tdName);
   tr.appendChild(tdNotes);
   return tr;
-}
-
-function renderFollowup(premium, basic) {
-  const tbody = document.getElementById("tbody-followup-list");
-  tbody.innerHTML = "";
-  const unpaidAll = [
-    ...premium.members.filter((m) => !m.completedAt).map((m) => ({ ...m, course: premium.courseLabel })),
-    ...basic.members.filter((m) => !m.completedAt).map((m) => ({ ...m, course: basic.courseLabel })),
-  ];
-  if (unpaidAll.length === 0) {
-    tbody.appendChild(emptyRow(2));
-    return;
-  }
-  unpaidAll.forEach((m) => {
-    const tr = document.createElement("tr");
-    const tdName = document.createElement("td");
-    tdName.className = "name";
-    tdName.textContent = `${m.lastName} ${m.firstName}`.trim() + `（${m.course}）`;
-    const tdNotes = document.createElement("td");
-    tdNotes.className = "notes";
-    tdNotes.textContent = m.notes || "-";
-    tr.appendChild(tdName);
-    tr.appendChild(tdNotes);
-    tbody.appendChild(tr);
-  });
 }
 
 function cellValue(cell) {
