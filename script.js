@@ -1,5 +1,5 @@
 // ==== 設定 ====
-const SHEET_ID = "15DN8OKsj7vlnj1AL9RbIF2M-SchyMYdA_iSloX6GZq0";
+const SHEET_ID = "105rRggTbnqFuhwMM31iqtcGlinovnxMEwIij8luGC60";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const PREMIUM_PRICE = 180000;
@@ -113,9 +113,10 @@ function yen(n) {
 }
 
 function renderTopSummary(premiumStats, basicStats) {
-  const totalPaid = premiumStats.paid + basicStats.paid;
+  // 継続者数は未入金の申込者も含めた人数(=申込総数)
+  const totalCount = premiumStats.total + basicStats.total;
   document.getElementById("kpi-count").textContent =
-    `${totalPaid}名（プレミアム${premiumStats.paid}名、ベーシック${basicStats.paid}名）`;
+    `${totalCount}名（プレミアム${premiumStats.total}名、ベーシック${basicStats.total}名）`;
 
   const premiumRevenue = premiumStats.paid * PREMIUM_PRICE;
   const basicRevenue = basicStats.paid * BASIC_PRICE;
@@ -131,17 +132,33 @@ function renderTopSummary(premiumStats, basicStats) {
 }
 
 // マイスピー転記シート: ユーザーID, 本登録完了日時, 姓, 名, メールアドレス, 状況・メモ(F列, 手入力)
+// 入金完了時にマイスピーが同じユーザーIDで新しい行を末尾に追加する仕様のため、
+// ユーザーIDで重複排除し、入金済みの行を優先する。
 async function loadMemberSheet(sheetId, courseLabel, summaryElId, tbodyId) {
   const rawRows = await fetchGvizRows(sheetId);
-  const members = rawRows.map((r) => {
+  const byUserId = new Map();
+  rawRows.forEach((r) => {
     const c = r.c || [];
-    return {
+    const userId = cellValue(c[0]);
+    const entry = {
       completedAt: cellValue(c[1]),
       lastName: cellValue(c[2]),
       firstName: cellValue(c[3]),
       notes: cellValue(c[5]),
     };
+    const key = userId || `${entry.lastName}_${entry.firstName}`;
+    const existing = byUserId.get(key);
+    if (!existing || (!existing.completedAt && entry.completedAt)) {
+      // 既存が未入金 or 未登録で、今回の行が入金済みなら上書き(または新規登録)
+      byUserId.set(key, {
+        ...entry,
+        notes: entry.notes || (existing && existing.notes) || "",
+      });
+    } else if (existing && !entry.notes && existing.notes) {
+      // 何もしない(既存のメモを維持)
+    }
   });
+  const members = [...byUserId.values()];
 
   const paidCount = members.filter((m) => m.completedAt).length;
   const unpaidCount = members.length - paidCount;
@@ -266,6 +283,32 @@ function render(rows) {
             tr.appendChild(td);
           });
           planBody.appendChild(tr);
+        });
+      }
+    }
+
+    const promoList = document.getElementById(`promo-${cat}-list`);
+    if (promoList) {
+      promoList.innerHTML = "";
+      if (planRows.length === 0) {
+        const li = document.createElement("li");
+        li.className = "empty-item";
+        li.textContent = "スプレッドシートに施策を追加してください";
+        promoList.appendChild(li);
+      } else {
+        planRows.forEach((r) => {
+          const li = document.createElement("li");
+          const parts = [r.plan];
+          if (r.schedule) parts.push(`（${r.schedule}）`);
+          if (r.owner) parts.push(` 担当:${r.owner}`);
+          li.textContent = parts.join("");
+          if (r.memo) {
+            const memoSpan = document.createElement("span");
+            memoSpan.className = "promo-memo";
+            memoSpan.textContent = ` ${r.memo}`;
+            li.appendChild(memoSpan);
+          }
+          promoList.appendChild(li);
         });
       }
     }

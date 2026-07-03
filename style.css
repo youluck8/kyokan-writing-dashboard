@@ -198,3 +198,14 @@ table.kpi td.label {
   border-top: 1px dashed #ccc;
   margin: 32px 0;
 }
+
+.promo-memo {
+  color: #777;
+  font-size: 13px;
+}
+
+.promo-list li.empty-item {
+  color: #aaa;
+  list-style: none;
+  margin-left: -20px;
+}
