@@ -250,28 +250,39 @@ function yen(n) {
   return `${n.toLocaleString("ja-JP")}円`;
 }
 
+// メインの数値の下に、括弧書きの内訳を改行して表示する
+function renderKpiValue(elId, mainText, breakdownText) {
+  const el = document.getElementById(elId);
+  el.innerHTML = "";
+  el.appendChild(document.createTextNode(mainText));
+  const breakdown = document.createElement("span");
+  breakdown.className = "kpi-breakdown";
+  breakdown.textContent = breakdownText;
+  el.appendChild(breakdown);
+}
+
 function renderTopSummary(premiumStats, basicStats) {
   // 継続者数は未入金の申込者も含めた人数(=申込総数)
   const totalCount = premiumStats.total + basicStats.total;
-  document.getElementById("kpi-count").textContent =
-    `${totalCount}名（プレミアム${premiumStats.total}名、ベーシック${basicStats.total}名）`;
+  renderKpiValue(
+    "kpi-count",
+    `${totalCount}名`,
+    `（プレミアム${premiumStats.total}名、ベーシック${basicStats.total}名）`
+  );
 
   const premiumRevenue = premiumStats.paid * PREMIUM_PRICE;
   const basicRevenue = basicStats.paid * BASIC_PRICE;
   const totalRevenue = premiumRevenue + basicRevenue;
-  const revenueEl = document.getElementById("kpi-revenue-by-course");
-  revenueEl.innerHTML = "";
-  revenueEl.appendChild(document.createTextNode(yen(totalRevenue)));
-  const revenueBreakdown = document.createElement("span");
-  revenueBreakdown.className = "kpi-breakdown";
-  revenueBreakdown.textContent = `（プレミアム${yen(premiumRevenue)}、ベーシック${yen(basicRevenue)}）`;
-  revenueEl.appendChild(revenueBreakdown);
+  renderKpiValue(
+    "kpi-revenue-by-course",
+    yen(totalRevenue),
+    `（プレミアム${yen(premiumRevenue)}、ベーシック${yen(basicRevenue)}）`
+  );
 
   const premiumPending = premiumStats.unpaid * PREMIUM_PRICE;
   const basicPending = basicStats.unpaid * BASIC_PRICE;
   const totalPending = premiumPending + basicPending;
-  document.getElementById("kpi-revenue-total").textContent =
-    `${yen(totalRevenue)}（未入金${yen(totalPending)}）`;
+  renderKpiValue("kpi-revenue-total", yen(totalRevenue), `（未入金${yen(totalPending)}）`);
 }
 
 // マイスピー転記シート: ユーザーID, 本登録完了日時, 姓, 名, メールアドレス, 状況・メモ(F列, 手入力)
