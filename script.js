@@ -1,5 +1,6 @@
 // ==== 設定 ====
-const SHEET_ID = "105rRggTbnqFuhwMM31iqtcGlinovnxMEwIij8luGC60";
+const SHEET_ID = "15DN8OKsj7vlnj1AL9RbIF2M-SchyMYdA_iSloX6GZq0";
+const PROMO_TAB_NAME = "プロモーション計画";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const PREMIUM_PRICE = 180000;
@@ -55,15 +56,33 @@ function sheetLinkUrl(sheetId) {
   return `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
 }
 
-async function fetchGvizRows(sheetId) {
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&t=${Date.now()}`;
+async function fetchGvizRows(sheetId, sheetName) {
+  const sheetParam = sheetName ? `&sheet=${encodeURIComponent(sheetName)}` : "";
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json${sheetParam}&t=${Date.now()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`sheet fetch not ok: ${res.status}`);
   const text = await res.text();
   const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/);
   if (!match) throw new Error("unexpected sheet response format");
   const json = JSON.parse(match[1]);
+  if (json.status === "error") throw new Error(`gviz error: ${JSON.stringify(json.errors)}`);
   return json.table.rows || [];
+}
+
+function toPlanRows(rawRows) {
+  return rawRows.map((r) => {
+    const c = r.c || [];
+    return {
+      updated: cellValue(c[0]),
+      category: cellValue(c[1]),
+      label: cellValue(c[2]),
+      status: cellValue(c[3]),
+      plan: cellValue(c[4]),
+      schedule: cellValue(c[5]),
+      owner: cellValue(c[6]),
+      memo: cellValue(c[7]),
+    };
+  });
 }
 
 async function loadData() {
@@ -72,21 +91,15 @@ async function loadData() {
   document.getElementById("basicSheetLink").href = sheetLinkUrl(BASIC_SHEET_ID);
 
   try {
-    const rawRows = await fetchGvizRows(SHEET_ID);
-    const rows = rawRows.map((r) => {
-      const c = r.c || [];
-      return {
-        updated: cellValue(c[0]),
-        category: cellValue(c[1]),
-        label: cellValue(c[2]),
-        status: cellValue(c[3]),
-        plan: cellValue(c[4]),
-        schedule: cellValue(c[5]),
-        owner: cellValue(c[6]),
-        memo: cellValue(c[7]),
-      };
-    });
-    render(rows);
+    // 1枚目のタブ(サマリー・備考)と「プロモーション計画」タブの両方を読み込んで統合する
+    const [mainRaw, promoRaw] = await Promise.all([
+      fetchGvizRows(SHEET_ID),
+      fetchGvizRows(SHEET_ID, PROMO_TAB_NAME).catch((err) => {
+        console.error("promo tab load failed (未作成の可能性があります)", err);
+        return [];
+      }),
+    ]);
+    render([...toPlanRows(mainRaw), ...toPlanRows(promoRaw)]);
   } catch (err) {
     console.error("main sheet load failed", err);
   }
