@@ -1,5 +1,5 @@
 // ==== 設定 ====
-const SHEET_ID = "15DN8OKsj7vlnj1AL9RbIF2M-SchyMYdA_iSloX6GZq0";
+const SHEET_ID = "1wDGrV4EcFwtUGWGaQQzOKqUPf_jd7SJ1M8RmRk_-ais";
 const PROMO_TAB_NAME = "プロモーション計画";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
