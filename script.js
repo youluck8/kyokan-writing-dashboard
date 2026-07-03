@@ -259,8 +259,13 @@ function renderTopSummary(premiumStats, basicStats) {
   const premiumRevenue = premiumStats.paid * PREMIUM_PRICE;
   const basicRevenue = basicStats.paid * BASIC_PRICE;
   const totalRevenue = premiumRevenue + basicRevenue;
-  document.getElementById("kpi-revenue-by-course").textContent =
-    `${yen(totalRevenue)}（プレミアム${yen(premiumRevenue)}、ベーシック${yen(basicRevenue)}）`;
+  const revenueEl = document.getElementById("kpi-revenue-by-course");
+  revenueEl.innerHTML = "";
+  revenueEl.appendChild(document.createTextNode(yen(totalRevenue)));
+  const revenueBreakdown = document.createElement("span");
+  revenueBreakdown.className = "kpi-breakdown";
+  revenueBreakdown.textContent = `（プレミアム${yen(premiumRevenue)}、ベーシック${yen(basicRevenue)}）`;
+  revenueEl.appendChild(revenueBreakdown);
 
   const premiumPending = premiumStats.unpaid * PREMIUM_PRICE;
   const basicPending = basicStats.unpaid * BASIC_PRICE;
