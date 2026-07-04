@@ -246,6 +246,21 @@ table.member-list { margin-bottom: 32px; border-radius: 12px; overflow: hidden; 
 table.member-list td.name { width: 220px; font-weight: 600; }
 table.member-list td.notes { color: #555; }
 
+.table-scroll {
+  overflow-x: auto;
+}
+table.nonkeizoku-table {
+  min-width: 720px;
+}
+table.nonkeizoku-table td.status-cell {
+  white-space: pre-line;
+  color: #4a4f57;
+}
+table.nonkeizoku-table td.status-cell a {
+  color: var(--blue);
+  font-weight: 700;
+}
+
 .unpaid-tag {
   color: var(--nred);
   font-weight: 800;

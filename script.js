@@ -6,6 +6,7 @@ const PROMO_NEW_TAB_NAME = "【新規】プロモーション";
 const GOKI_TAB_NAME = "5期スケジュール";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
+const NON_CONTINUER_SHEET_ID = "1hJJuKTRZo364NahVGgLgYxKvgYyPNtARH-_yd3-cPhw";
 const PREMIUM_PRICE = 180000;
 const BASIC_PRICE = 90000;
 const TOTAL_4KI_COUNT = 108; // 4期全体110名からインターン生2名を除いた実質対象数
@@ -222,6 +223,7 @@ async function loadData() {
   document.getElementById("sheetLink").href = sheetLinkUrl(SHEET_ID);
   document.getElementById("premiumSheetLink").href = sheetLinkUrl(PREMIUM_SHEET_ID);
   document.getElementById("basicSheetLink").href = sheetLinkUrl(BASIC_SHEET_ID);
+  document.getElementById("nonContinuerSheetLink").href = sheetLinkUrl(NON_CONTINUER_SHEET_ID);
 
   try {
     const mainRaw = await fetchGvizRows(SHEET_ID, MAIN_TAB_NAME);
@@ -271,6 +273,50 @@ async function loadData() {
   if (premium && basic) {
     renderTopSummary(premium, basic);
   }
+
+  loadNonContinuers().catch((err) => console.error("non-continuer sheet load failed", err));
+}
+
+// 未継続者リスト: 見出し行(1行目)がgvizで自動検出されないシートのため専用パーサーを使う。
+// 列: (A空)姓名,コース,卒業制作提出/発表,説明会参加,入会経緯（一言）,(G空),状況
+async function loadNonContinuers() {
+  const rawRows = await fetchGvizRows(NON_CONTINUER_SHEET_ID);
+  const people = rawRows
+    .slice(1)
+    .map((r) => {
+      const c = r.c || [];
+      return {
+        name: cellValue(c[1]),
+        course: cellValue(c[2]),
+        graduation: cellValue(c[3]),
+        seminar: cellValue(c[4]),
+        reason: cellValue(c[5]),
+        status: cellValue(c[7]),
+      };
+    })
+    .filter((p) => p.name);
+
+  document.getElementById("summary-nonkeizoku").textContent = `合計 ${people.length}名`;
+
+  const tbody = document.getElementById("tbody-nonkeizoku-list");
+  tbody.innerHTML = "";
+  if (people.length === 0) {
+    tbody.appendChild(emptyRow(6));
+    return;
+  }
+  people.forEach((p) => {
+    const tr = document.createElement("tr");
+    [p.name, p.course, p.graduation, p.seminar, p.reason].forEach((val) => {
+      const td = document.createElement("td");
+      td.textContent = val || "-";
+      tr.appendChild(td);
+    });
+    const statusTd = document.createElement("td");
+    statusTd.className = "status-cell";
+    appendLinkifiedText(statusTd, p.status || "-");
+    tr.appendChild(statusTd);
+    tbody.appendChild(tr);
+  });
 }
 
 function yen(n) {

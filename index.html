@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 Not Found</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 
@@ -77,6 +77,22 @@
     <table><tbody id="tbody-共通-status"></tbody></table>
   </section>
 
+  <section class="section" id="block-nonkeizoku">
+    <div class="section-head">
+      <h2>未継続者フォロー状況</h2>
+      <a id="nonContinuerSheetLink" class="sheet-link small-link" href="#" target="_blank" rel="noopener">シートを開く →</a>
+    </div>
+    <p class="roster-summary" id="summary-nonkeizoku">読み込み中...</p>
+    <div class="table-scroll">
+      <table class="member-list nonkeizoku-table">
+        <thead>
+          <tr><th>氏名</th><th>コース</th><th>卒業制作</th><th>説明会参加</th><th>入会経緯</th><th>状況</th></tr>
+        </thead>
+        <tbody id="tbody-nonkeizoku-list"></tbody>
+      </table>
+    </div>
+  </section>
+
   <section class="section" id="block-meibo">
     <div class="section-head">
       <h2>継続者名簿</h2>
@@ -98,6 +114,6 @@
 </div>
 </div>
 
-<script src="script.js?v=35"></script>
+<script src="script.js?v=36"></script>
 </body>
 </html>
