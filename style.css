@@ -336,6 +336,12 @@ table.member-list td.notes { color: #555; }
   border-radius: 8px;
   margin-top: 10px;
   font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.promo-note a {
+  color: var(--blue);
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .promo-list li.promo-done {

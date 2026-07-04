@@ -179,12 +179,35 @@ function buildPromoListItems(container, rows) {
     restKeys.forEach((key) => {
       const noteDiv = document.createElement("div");
       noteDiv.className = "promo-note";
-      noteDiv.textContent = `${key}: ${r[key]}`;
+      appendLinkifiedText(noteDiv, `${key}: ${r[key]}`);
       li.appendChild(noteDiv);
     });
 
     container.appendChild(li);
   });
+}
+
+// テキスト中のURL(http/https)を自動でハイパーリンク化して要素に追加する
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+function appendLinkifiedText(container, text) {
+  let lastIndex = 0;
+  URL_REGEX.lastIndex = 0;
+  let match;
+  while ((match = URL_REGEX.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      container.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    }
+    const a = document.createElement("a");
+    a.href = match[0];
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = match[0];
+    container.appendChild(a);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    container.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
 }
 
 // 見出しは常にタブ名の設定(定数)と同じ文字列にする。表示名とフェッチ先のズレを防ぐため。
