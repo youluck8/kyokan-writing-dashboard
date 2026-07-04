@@ -301,12 +301,31 @@ async function loadNonContinuers() {
     return;
   }
   people.forEach((p) => {
+    const applied = p.applied === "TRUE";
     const tr = document.createElement("tr");
-    [p.name, p.course, p.graduation, p.seminar, p.applied, p.reason].forEach((val) => {
+    if (applied) tr.classList.add("continued-row");
+
+    [p.name, p.course, p.graduation, p.seminar].forEach((val) => {
       const td = document.createElement("td");
       td.textContent = val || "-";
       tr.appendChild(td);
     });
+
+    const appliedTd = document.createElement("td");
+    if (applied) {
+      const badge = document.createElement("span");
+      badge.className = "applied-badge";
+      badge.textContent = "申し込み済み";
+      appliedTd.appendChild(badge);
+    } else {
+      appliedTd.textContent = "-";
+    }
+    tr.appendChild(appliedTd);
+
+    const reasonTd = document.createElement("td");
+    reasonTd.textContent = p.reason || "-";
+    tr.appendChild(reasonTd);
+
     const statusTd = document.createElement("td");
     statusTd.className = "status-cell";
     appendLinkifiedText(statusTd, p.status || "-");

@@ -260,6 +260,20 @@ table.nonkeizoku-table td.status-cell a {
   color: var(--blue);
   font-weight: 700;
 }
+table.nonkeizoku-table tr.continued-row td {
+  color: #aaa;
+  opacity: 0.65;
+}
+.applied-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--green-soft);
+  color: var(--green);
+}
 
 .unpaid-tag {
   color: var(--nred);
