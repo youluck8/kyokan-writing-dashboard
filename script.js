@@ -277,36 +277,32 @@ async function loadData() {
   loadNonContinuers().catch((err) => console.error("non-continuer sheet load failed", err));
 }
 
-// 未継続者リスト: 見出し行(1行目)がgvizで自動検出されないシートのため専用パーサーを使う。
-// 列: (A空)姓名,コース,卒業制作提出/発表,説明会参加,入会経緯（一言）,(G空),状況
+// 未継続者リスト: 列番号ではなく見出し名で読み取るため、列の追加/並び替えに強い。
 async function loadNonContinuers() {
-  const rawRows = await fetchGvizRows(NON_CONTINUER_SHEET_ID);
-  const people = rawRows
-    .slice(1)
-    .map((r) => {
-      const c = r.c || [];
-      return {
-        name: cellValue(c[1]),
-        course: cellValue(c[2]),
-        graduation: cellValue(c[3]),
-        seminar: cellValue(c[4]),
-        reason: cellValue(c[5]),
-        status: cellValue(c[7]),
-      };
-    })
-    .filter((p) => p.name);
+  const table = await fetchGvizTable(NON_CONTINUER_SHEET_ID);
+  const people = toDynamicRows(table)
+    .filter((r) => r["姓名"])
+    .map((r) => ({
+      name: r["姓名"] || "",
+      course: r["コース"] || "",
+      graduation: r["卒業制作提出/発表"] || "",
+      seminar: r["説明会参加"] || "",
+      applied: r["5期継続申込"] || "",
+      reason: r["入会経緯（一言）"] || "",
+      status: r["状況"] || "",
+    }));
 
   document.getElementById("summary-nonkeizoku").textContent = `合計 ${people.length}名`;
 
   const tbody = document.getElementById("tbody-nonkeizoku-list");
   tbody.innerHTML = "";
   if (people.length === 0) {
-    tbody.appendChild(emptyRow(6));
+    tbody.appendChild(emptyRow(7));
     return;
   }
   people.forEach((p) => {
     const tr = document.createElement("tr");
-    [p.name, p.course, p.graduation, p.seminar, p.reason].forEach((val) => {
+    [p.name, p.course, p.graduation, p.seminar, p.applied, p.reason].forEach((val) => {
       const td = document.createElement("td");
       td.textContent = val || "-";
       tr.appendChild(td);
