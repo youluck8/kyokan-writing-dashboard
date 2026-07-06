@@ -106,7 +106,8 @@ function toDynamicRows(table) {
     const obj = {};
     (r.c || []).forEach((cell, i) => {
       const key = headers[i];
-      if (key) obj[key] = cellValue(cell);
+      if (!key) return;
+      obj[key] = key === "更新日" ? normalizedDate(cell) || cellValue(cell) : cellValue(cell);
     });
     return obj;
   });
@@ -117,7 +118,7 @@ function toPlanRows(rawRows) {
   return rawRows.map((r) => {
     const c = r.c || [];
     return {
-      updated: cellValue(c[0]),
+      updated: normalizedDate(c[0]) || cellValue(c[0]),
       category: cellValue(c[1]),
       label: cellValue(c[2]),
       status: cellValue(c[3]),
@@ -478,6 +479,19 @@ function cellValue(cell) {
   if (cell.f !== undefined && cell.f !== null && cell.f !== "") return String(cell.f).trim();
   if (cell.v === null || cell.v === undefined) return "";
   return String(cell.v).trim();
+}
+
+// 更新日セルをYYYY-MM-DDに正規化する。表示形式(f)は列によって「yyyy/MM/dd」
+// 「m月d日」(年なし)などバラバラで、そのまま文字列比較すると誤った大小関係になる
+// ことがある(実際に発生した不具合)ため、実際の日付(v)をパースして統一する。
+function normalizedDate(cell) {
+  if (!cell || typeof cell.v !== "string") return "";
+  const m = cell.v.match(/^Date\((\d+),(\d+),(\d+)/);
+  if (!m) return "";
+  const year = m[1];
+  const month = String(Number(m[2]) + 1).padStart(2, "0");
+  const day = m[3].padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function render(rows) {
