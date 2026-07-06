@@ -76,9 +76,14 @@ function sheetLinkUrl(sheetId) {
   return `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
 }
 
-async function fetchGvizTable(sheetId, sheetName) {
+// forceSingleHeader: gvizの見出し行自動判定が、新しく追加された行を誤って2つ目の
+// 見出し行と判定し、データが消えてしまう不具合が実際に発生したため、マイスピー連携シート
+// (ユーザーID/本登録完了日時/姓/名/メールアドレス)ではheaders=1で明示的に固定する。
+// (このオプションは列Aが常に空欄のシートでは逆に見出し検出を壊すため、全シート共通にはしていない)
+async function fetchGvizTable(sheetId, sheetName, forceSingleHeader) {
   const sheetParam = sheetName ? `&sheet=${encodeURIComponent(sheetName)}` : "";
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json${sheetParam}&t=${Date.now()}`;
+  const headersParam = forceSingleHeader ? "&headers=1" : "";
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json${headersParam}${sheetParam}&t=${Date.now()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`sheet fetch not ok: ${res.status}`);
   const text = await res.text();
@@ -89,8 +94,8 @@ async function fetchGvizTable(sheetId, sheetName) {
   return json.table || { cols: [], rows: [] };
 }
 
-async function fetchGvizRows(sheetId, sheetName) {
-  return (await fetchGvizTable(sheetId, sheetName)).rows || [];
+async function fetchGvizRows(sheetId, sheetName, forceSingleHeader) {
+  return (await fetchGvizTable(sheetId, sheetName, forceSingleHeader)).rows || [];
 }
 
 // 1行目の見出しをそのままキーにしたオブジェクトへ変換する。
@@ -399,7 +404,7 @@ function renderTopSummary(premiumStats, basicStats) {
 // 入金完了時にマイスピーが同じユーザーIDで新しい行を末尾に追加する仕様のため、
 // ユーザーIDで重複排除し、入金済みの行を優先する。
 async function loadMemberSheet(sheetId, courseLabel, summaryElId, tbodyId) {
-  const rawRows = await fetchGvizRows(sheetId);
+  const rawRows = await fetchGvizRows(sheetId, undefined, true);
   const byUserId = new Map();
   rawRows.forEach((r) => {
     const c = r.c || [];
