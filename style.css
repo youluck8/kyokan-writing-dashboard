@@ -121,6 +121,22 @@ h1 {
   transition: background 0.15s ease;
 }
 .sheet-link:hover { background: var(--nred-dark); text-decoration: none; }
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.refresh-btn {
+  background: var(--soft);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  font-family: inherit;
+}
+.refresh-btn:hover { background: #ececec; }
+.refresh-btn:disabled { opacity: 0.6; cursor: default; }
 .small-link {
   margin: 0 0 0 8px;
   display: inline-flex;

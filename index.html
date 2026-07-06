@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 Not Found</title>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -22,7 +22,10 @@
     <div class="top-main">
       <h1>共感5期ダッシュボード</h1>
       <p class="lead">最終更新: <span id="lastUpdated">-</span>（1分毎に自動更新）</p>
-      <a id="sheetLink" class="sheet-link" href="#" target="_blank" rel="noopener">スプレッドシートを開いて編集する →</a>
+      <div class="top-actions">
+        <a id="sheetLink" class="sheet-link" href="#" target="_blank" rel="noopener">スプレッドシートを開いて編集する →</a>
+        <button id="refreshBtn" class="sheet-link refresh-btn" type="button">今すぐ更新</button>
+      </div>
     </div>
     <div class="summary" id="kpi-summary">
       <div class="summary-item accent-blue">
@@ -114,6 +117,6 @@
 </div>
 </div>
 
-<script src="script.js?v=38"></script>
+<script src="script.js?v=39"></script>
 </body>
 </html>

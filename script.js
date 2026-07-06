@@ -45,6 +45,18 @@ function unlock() {
   document.title = DASHBOARD_TITLE;
   loadData();
   setInterval(loadData, REFRESH_INTERVAL_MS);
+
+  const refreshBtn = document.getElementById("refreshBtn");
+  refreshBtn.addEventListener("click", async () => {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "更新中...";
+    try {
+      await loadData();
+    } finally {
+      refreshBtn.textContent = "今すぐ更新";
+      refreshBtn.disabled = false;
+    }
+  });
 }
 
 if (sessionStorage.getItem("kyokanUnlocked") === "1") {
