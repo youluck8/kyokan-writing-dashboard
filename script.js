@@ -529,6 +529,16 @@ function updateLastUpdated(dateStrings) {
   if (latest) el.textContent = latest;
 }
 
+// ==== タブ切り替え ====
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+});
+
 function emptyRow(colspan) {
   const tr = document.createElement("tr");
   tr.className = "empty-row";

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 Not Found</title>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -50,65 +50,95 @@
       </div>
     </div>
   </header>
-  <p class="note top-note">※継続者名簿は末尾に記載しています</p>
 
-  <section class="section">
-    <div class="section-head">
-      <h2 id="promo-継続-title"></h2>
-    </div>
-    <ul class="promo-list" id="promo-継続-list"></ul>
-  </section>
+  <!-- タブナビゲーション -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="tab-home">ホーム</button>
+    <button class="tab-btn" data-tab="tab-promo">プロモーション</button>
+    <button class="tab-btn" data-tab="tab-keizoku">継続者</button>
+    <button class="tab-btn" data-tab="tab-shinki">新規</button>
+    <button class="tab-btn" data-tab="tab-taikai">退会者</button>
+  </nav>
 
-  <section class="section">
-    <div class="section-head">
-      <h2 id="promo-新規-title"></h2>
-    </div>
-    <ul class="promo-list" id="promo-新規-list"></ul>
-  </section>
+  <!-- ホームタブ：備考 -->
+  <div class="tab-pane active" id="tab-home">
+    <section class="section" id="block-共通">
+      <div class="section-head">
+        <h2>備考</h2>
+      </div>
+      <table><tbody id="tbody-共通-status"></tbody></table>
+    </section>
+  </div>
 
-  <section class="section">
-    <div class="section-head">
-      <h2 id="goki-title"></h2>
-    </div>
-    <ul class="promo-list" id="goki-list"></ul>
-  </section>
+  <!-- プロモーションタブ -->
+  <div class="tab-pane" id="tab-promo">
+    <section class="section">
+      <div class="section-head">
+        <h2 id="promo-継続-title"></h2>
+      </div>
+      <ul class="promo-list" id="promo-継続-list"></ul>
+    </section>
 
-  <section class="section" id="block-共通">
-    <div class="section-head">
-      <h2>備考</h2>
-    </div>
-    <table><tbody id="tbody-共通-status"></tbody></table>
-  </section>
+    <section class="section">
+      <div class="section-head">
+        <h2 id="promo-新規-title"></h2>
+      </div>
+      <ul class="promo-list" id="promo-新規-list"></ul>
+    </section>
 
-  <section class="section" id="block-nonkeizoku">
-    <div class="section-head">
-      <h2>未継続者フォロー状況</h2>
-      <a id="nonContinuerSheetLink" class="sheet-link small-link" href="#" target="_blank" rel="noopener">シートを開く →</a>
-    </div>
-    <p class="roster-summary" id="summary-nonkeizoku">読み込み中...</p>
-    <div class="table-scroll">
-      <table class="member-list nonkeizoku-table">
-        <thead>
-          <tr><th>氏名</th><th>コース</th><th>卒業制作</th><th>説明会参加</th><th>5期継続申込</th><th>入会経緯</th><th>状況</th></tr>
-        </thead>
-        <tbody id="tbody-nonkeizoku-list"></tbody>
-      </table>
-    </div>
-  </section>
+    <section class="section">
+      <div class="section-head">
+        <h2 id="goki-title"></h2>
+      </div>
+      <ul class="promo-list" id="goki-list"></ul>
+    </section>
+  </div>
 
-  <section class="section" id="block-meibo">
-    <div class="section-head">
-      <h2>継続者名簿</h2>
-    </div>
+  <!-- 継続者タブ -->
+  <div class="tab-pane" id="tab-keizoku">
+    <section class="section" id="block-meibo">
+      <div class="section-head">
+        <h2>継続者名簿</h2>
+      </div>
 
-    <h3>プレミアムコース <a id="premiumSheetLink" class="sheet-link small-link" href="#" target="_blank" rel="noopener">シートを開く →</a></h3>
-    <p class="roster-summary" id="summary-premium">読み込み中...</p>
-    <table class="member-list"><tbody id="tbody-premium-list"></tbody></table>
+      <h3>プレミアムコース <a id="premiumSheetLink" class="sheet-link small-link" href="#" target="_blank" rel="noopener">シートを開く →</a></h3>
+      <p class="roster-summary" id="summary-premium">読み込み中...</p>
+      <table class="member-list"><tbody id="tbody-premium-list"></tbody></table>
 
-    <h3>ベーシックコース <a id="basicSheetLink" class="sheet-link small-link" href="#" target="_blank" rel="noopener">シートを開く →</a></h3>
-    <p class="roster-summary" id="summary-basic">読み込み中...</p>
-    <table class="member-list"><tbody id="tbody-basic-list"></tbody></table>
-  </section>
+      <h3>ベーシックコース <a id="basicSheetLink" class="sheet-link small-link" href="#" target="_blank" rel="noopener">シートを開く →</a></h3>
+      <p class="roster-summary" id="summary-basic">読み込み中...</p>
+      <table class="member-list"><tbody id="tbody-basic-list"></tbody></table>
+    </section>
+  </div>
+
+  <!-- 新規タブ -->
+  <div class="tab-pane" id="tab-shinki">
+    <section class="section">
+      <div class="section-head">
+        <h2>新規加入者</h2>
+      </div>
+      <p class="roster-summary">現在 0名（データソース準備中）</p>
+    </section>
+  </div>
+
+  <!-- 退会者タブ -->
+  <div class="tab-pane" id="tab-taikai">
+    <section class="section" id="block-nonkeizoku">
+      <div class="section-head">
+        <h2>未継続者フォロー状況</h2>
+        <a id="nonContinuerSheetLink" class="sheet-link small-link" href="#" target="_blank" rel="noopener">シートを開く →</a>
+      </div>
+      <p class="roster-summary" id="summary-nonkeizoku">読み込み中...</p>
+      <div class="table-scroll">
+        <table class="member-list nonkeizoku-table">
+          <thead>
+            <tr><th>氏名</th><th>コース</th><th>卒業制作</th><th>説明会参加</th><th>5期継続申込</th><th>入会経緯</th><th>状況</th></tr>
+          </thead>
+          <tbody id="tbody-nonkeizoku-list"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 
   <footer>
     <p>データはGoogleスプレッドシートと連動しています。継続者数・売上・名簿は自動計算、プロモーション計画もスプレッドシート編集で反映されます。</p>
@@ -117,6 +147,6 @@
 </div>
 </div>
 
-<script src="script.js?v=41"></script>
+<script src="script.js?v=42"></script>
 </body>
 </html>
