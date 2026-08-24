@@ -123,6 +123,23 @@
 
   <!-- 退会者タブ -->
   <div class="tab-pane" id="tab-taikai">
+    <section class="section">
+      <div class="section-head">
+        <h2>退会者一覧</h2>
+        <a id="withdrawalSheetLink" class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1Ta-g1ZnzF41mPmlyBlcsaapTUoXfRACUqEEtumwzgNg/edit" target="_blank" rel="noopener">シートを開く →</a>
+      </div>
+      <p class="roster-summary" id="summary-withdrawal">読み込み中...</p>
+      <p class="note" style="margin-bottom:16px;">※入金後キャンセルのみ記載（入金前キャンセルは除く）</p>
+      <div class="table-scroll">
+        <table class="member-list withdrawal-table">
+          <thead>
+            <tr><th>氏名</th><th>コース</th><th>退会理由</th><th>メモ</th></tr>
+          </thead>
+          <tbody id="tbody-withdrawal-list"></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="section" id="block-nonkeizoku">
       <div class="section-head">
         <h2>未継続者フォロー状況</h2>

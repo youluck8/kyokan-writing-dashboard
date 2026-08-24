@@ -7,6 +7,7 @@ const GOKI_TAB_NAME = "5期スケジュール";
 const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const NON_CONTINUER_SHEET_ID = "1hJJuKTRZo364NahVGgLgYxKvgYyPNtARH-_yd3-cPhw";
+const WITHDRAWAL_SHEET_ID = "1Ta-g1ZnzF41mPmlyBlcsaapTUoXfRACUqEEtumwzgNg";
 const PREMIUM_PRICE = 180000;
 const BASIC_PRICE = 90000;
 const TOTAL_4KI_COUNT = 108; // 4期全体110名からインターン生2名を除いた実質対象数
@@ -293,6 +294,7 @@ async function loadData() {
   }
 
   loadNonContinuers().catch((err) => console.error("non-continuer sheet load failed", err));
+  loadWithdrawals().catch((err) => console.error("withdrawal sheet load failed", err));
 }
 
 // 未継続者リスト: 列番号ではなく見出し名で読み取るため、列の追加/並び替えに強い。
@@ -527,6 +529,50 @@ function updateLastUpdated(dateStrings) {
   const current = el.textContent === "-" ? "" : el.textContent;
   const latest = [current, ...dateStrings].filter(Boolean).sort().pop();
   if (latest) el.textContent = latest;
+}
+
+// 退会者リスト: 1行目は注記、2行目がヘッダー(NO./氏名/メール/コース/退会理由/メモ)
+async function loadWithdrawals() {
+  const table = await fetchGvizTable(WITHDRAWAL_SHEET_ID, undefined, false);
+  // 1行目が注記行、2行目がヘッダーのため、cols は注記行のラベルになっている場合がある
+  // 安全のため行インデックスで直接読む (headers=falseの場合、cols[i].labelは列番号"Col1"等になる)
+  // gvizはtqx=out:jsonで返す際、1行目をヘッダーと判定することがある。
+  // 実際のデータ行だけを取り出すため、氏名セル(index 1)が空でない行のみ使用する
+  const rows = (table.rows || []).map((r) => {
+    const c = r.c || [];
+    return {
+      no: cellValue(c[0]),
+      name: cellValue(c[1]),
+      course: cellValue(c[2]),
+      reason: cellValue(c[3]),
+      memo: cellValue(c[4]),
+    };
+  }).filter((r) => r.name && r.name !== "氏名" && r.no !== "NＯ．" && r.no !== "NO.");
+
+  const summaryEl = document.getElementById("summary-withdrawal");
+  if (summaryEl) summaryEl.textContent = `合計 ${rows.length}名`;
+
+  const tbody = document.getElementById("tbody-withdrawal-list");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  if (rows.length === 0) {
+    tbody.appendChild(emptyRow(4));
+    return;
+  }
+  rows.forEach((r) => {
+    const tr = document.createElement("tr");
+    [r.name, r.course, r.reason, r.memo].forEach((val, i) => {
+      const td = document.createElement("td");
+      if (i === 2) {
+        td.className = "withdrawal-reason";
+        td.textContent = val || "-";
+      } else {
+        td.textContent = val || "-";
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
 }
 
 // ==== タブ切り替え ====

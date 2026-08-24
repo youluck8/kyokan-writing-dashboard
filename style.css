@@ -406,6 +406,14 @@ footer {
   text-align: center;
 }
 
+table.withdrawal-table { min-width: 600px; }
+table.withdrawal-table td.withdrawal-reason {
+  font-size: 13px;
+  color: #4a4f57;
+  white-space: pre-line;
+  max-width: 360px;
+}
+
 /* --- タブナビゲーション --- */
 .tab-nav {
   display: flex;
