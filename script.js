@@ -10,6 +10,7 @@ const NON_CONTINUER_SHEET_ID = "1hJJuKTRZo364NahVGgLgYxKvgYyPNtARH-_yd3-cPhw";
 const WITHDRAWAL_SHEET_ID = "1Ta-g1ZnzF41mPmlyBlcsaapTUoXfRACUqEEtumwzgNg";
 const SHINKI_PREMIUM_SHEET_ID = "1UBRxHPM_Ak5ED3C75xYExJCBZUUS4mv610Z4VzHUF3A";
 const SHINKI_BASIC_SHEET_ID = "1o-E6D-q1fWvpHAKs2gX5VC8UjilEBzHIroAPFYbJpow";
+const SHINKI_SURVEY_SHEET_ID = "1HmTGpQcNdfwOyBvb2_bh_cN420rqh60As0EM2rHgAeI";
 const PREMIUM_PRICE = 180000;
 const BASIC_PRICE = 90000;
 const TOTAL_4KI_COUNT = 108; // 4期全体110名からインターン生2名を除いた実質対象数
@@ -628,13 +629,41 @@ function renderSeminarCards() {
 }
 
 // ==== 新規加入者 ====
+const SURVEY_QUESTIONS = [
+  { key: "q1", label: "生年月日", idx: 3 },
+  { key: "q2", label: "生まれた時間", idx: 4 },
+  { key: "q3", label: "生まれた場所", idx: 5 },
+  { key: "q4", label: "現在の活動内容", idx: 6 },
+  { key: "q5", label: "月間収益（平均）", idx: 7 },
+  { key: "q6", label: "PC・ITスキル", idx: 8 },
+  { key: "q7", label: "AI活用状況", idx: 9 },
+  { key: "q8", label: "もどかしい・不安なこと", idx: 10 },
+  { key: "q9", label: "達成したい成果・目標", idx: 11 },
+  { key: "q10", label: "期限・ライフイベント", idx: 12 },
+  { key: "q11", label: "共感ライティングを選んだ理由", idx: 13 },
+  { key: "q12", label: "これまで学んだスキル・講座", idx: 14 },
+  { key: "q13", label: "初回面談で聞きたいこと", idx: 15 },
+];
+
 async function loadShinkiMembers() {
-  const [premRows, basicRows] = await Promise.all([
+  const [premRows, basicRows, surveyPremRows, surveyBasicRows] = await Promise.all([
     fetchGvizCsv(SHINKI_PREMIUM_SHEET_ID),
     fetchGvizCsv(SHINKI_BASIC_SHEET_ID),
+    fetchGvizCsv(SHINKI_SURVEY_SHEET_ID, "プレミアム").catch(() => []),
+    fetchGvizCsv(SHINKI_SURVEY_SHEET_ID, "ベーシック").catch(() => []),
   ]);
 
-  // メールで名寄せ、入金済み情報を優先
+  // アンケートをメールで索引（最新回答を採用）
+  const surveyMap = new Map();
+  [...surveyPremRows, ...surveyBasicRows].forEach((r) => {
+    const email = (r[1] || "").trim().toLowerCase();
+    if (!email) return;
+    const data = {};
+    SURVEY_QUESTIONS.forEach((q) => { data[q.key] = (r[q.idx] || "").trim(); });
+    surveyMap.set(email, data);
+  });
+
+  // メールで名寄せ、入金済み優先
   const premMap = new Map();
   const basicMap = new Map();
 
@@ -646,7 +675,7 @@ async function loadShinkiMembers() {
       if (!email || name === "") return;
       const ex = map.get(email);
       if (!ex || (!ex.paid && paid)) {
-        map.set(email, { name, email, paid });
+        map.set(email, { name, email, paid, survey: surveyMap.get(email) || null });
       }
     });
   }
@@ -654,11 +683,13 @@ async function loadShinkiMembers() {
   mergeInto(premMap, premRows);
   mergeInto(basicMap, basicRows);
 
-  // ベーシックシートにあってプレミアムにも入金済みの場合はベーシックから除外
+  // プレミアム入金済みの人をベーシックから除外
   basicMap.forEach((v, email) => {
     const prem = premMap.get(email);
     if (prem && prem.paid) basicMap.delete(email);
   });
+
+  let accordionCounter = 0;
 
   function renderCourse(members, summaryId, tbodyId) {
     const unpaid = members.filter((m) => !m.paid);
@@ -671,7 +702,11 @@ async function loadShinkiMembers() {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
     tbody.innerHTML = "";
+
     sorted.forEach((m) => {
+      const id = `survey-acc-${accordionCounter++}`;
+
+      // メイン行
       const tr = document.createElement("tr");
       const tdName = document.createElement("td");
       tdName.className = "name";
@@ -685,12 +720,56 @@ async function loadShinkiMembers() {
       }
       const tdSource = document.createElement("td");
       if (MARLIN_EMAILS.has(m.email)) {
-        tdSource.innerHTML = `<span class="applied-badge">7/31まーりん合同</span>`;
+        const tag = document.createElement("span");
+        tag.className = "applied-badge";
+        tag.textContent = "7/31まーりん合同";
+        tdSource.appendChild(tag);
+      }
+      // アンケートボタン
+      const tdBtn = document.createElement("td");
+      if (m.survey) {
+        const btn = document.createElement("button");
+        btn.className = "accordion-btn";
+        btn.setAttribute("aria-expanded", "false");
+        btn.textContent = "▼ アンケート";
+        btn.addEventListener("click", () => {
+          const pane = document.getElementById(id);
+          if (!pane) return;
+          const open = !pane.hidden;
+          pane.hidden = open;
+          btn.textContent = open ? "▼ アンケート" : "▲ 閉じる";
+        });
+        tdBtn.appendChild(btn);
       }
       tr.appendChild(tdName);
       tr.appendChild(tdStatus);
       tr.appendChild(tdSource);
+      tr.appendChild(tdBtn);
       tbody.appendChild(tr);
+
+      // アコーディオン行
+      if (m.survey) {
+        const trAcc = document.createElement("tr");
+        trAcc.id = id;
+        trAcc.hidden = true;
+        const tdAcc = document.createElement("td");
+        tdAcc.colSpan = 4;
+        tdAcc.className = "survey-pane";
+
+        const inner = document.createElement("div");
+        inner.className = "survey-inner";
+        SURVEY_QUESTIONS.forEach((q) => {
+          const val = m.survey[q.key];
+          if (!val) return;
+          const row = document.createElement("div");
+          row.className = "survey-row";
+          row.innerHTML = `<span class="survey-label">${q.label}</span><span class="survey-val">${val.replace(/\n/g, "<br>")}</span>`;
+          inner.appendChild(row);
+        });
+        tdAcc.appendChild(inner);
+        trAcc.appendChild(tdAcc);
+        tbody.appendChild(trAcc);
+      }
     });
   }
 
@@ -706,7 +785,7 @@ async function loadShinkiMembers() {
 }
 
 // gvizからCSV形式で行配列を取得するヘルパー
-async function fetchGvizCsv(sheetId, sheetName) {
+async function fetchGvizCsv(sheetId, sheetName = "") {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv` +
     (sheetName ? `&sheet=${encodeURIComponent(sheetName)}` : "");
   const res = await fetch(url);

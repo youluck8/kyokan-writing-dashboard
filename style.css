@@ -528,7 +528,28 @@ table.withdrawal-table td.withdrawal-reason {
 }
 
 /* --- 新規タブ --- */
-table.shinki-table { min-width: 500px; }
+table.shinki-table { min-width: 560px; }
+
+/* アンケートアコーディオン */
+td.survey-pane { padding: 0; background: var(--blue-soft); }
+.survey-inner {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 8px 16px;
+}
+.survey-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  padding-top: 2px;
+}
+.survey-val {
+  font-size: 13px;
+  color: #222;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
 .accordion-btn {
   background: var(--soft);
   border: 1px solid var(--line);
