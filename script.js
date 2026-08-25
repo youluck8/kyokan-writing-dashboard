@@ -13,6 +13,8 @@ const SHINKI_BASIC_SHEET_ID = "1o-E6D-q1fWvpHAKs2gX5VC8UjilEBzHIroAPFYbJpow";
 const SHINKI_SURVEY_SHEET_ID = "1HmTGpQcNdfwOyBvb2_bh_cN420rqh60As0EM2rHgAeI";
 const PREMIUM_PRICE = 180000;
 const BASIC_PRICE = 90000;
+const SHINKI_PREMIUM_PRICE = 360000;
+const SHINKI_BASIC_PRICE = 180000;
 const TOTAL_4KI_COUNT = 108; // 4期全体110名からインターン生2名を除いた実質対象数
 const NEW_MEMBER_COUNT = 2; // 工藤恵(プレミアム)・佐藤麻子(ベーシック)
 const NEW_REVENUE = 0;
@@ -357,13 +359,21 @@ function renderTopSummary(premiumStats, basicStats) {
     `（プレミアム${yen(premiumRevenue)}、ベーシック${yen(basicRevenue)}）未入金${yen(totalPending)}`
   );
 
-  renderKpiValue("kpi-new-revenue", yen(NEW_REVENUE), "");
+  // kpi-new-revenue・kpi-revenue-total は loadShinkiMembers() が更新する
+  // continueRevenue をグローバルに保持して合計計算に使う
+  window._continueRevenue = continueRevenue;
+  updateTotalRevenue();
+}
 
-  const grandTotalRevenue = continueRevenue + NEW_REVENUE;
+function updateTotalRevenue() {
+  const continueRevenue = window._continueRevenue || 0;
+  const newRevenue = window._newRevenue || 0;
+  renderKpiValue("kpi-new-revenue", yen(newRevenue),
+    `プレミアム${yen(window._shinkiPremRevenue || 0)}、ベーシック${yen(window._shinkiBasicRevenue || 0)}`);
   renderKpiValue(
     "kpi-revenue-total",
-    yen(grandTotalRevenue),
-    `（継続${yen(continueRevenue)}、新規${yen(NEW_REVENUE)}）`
+    yen(continueRevenue + newRevenue),
+    `（継続${yen(continueRevenue)}、新規${yen(newRevenue)}）`
   );
 }
 
@@ -769,12 +779,20 @@ async function loadShinkiMembers() {
   const premMembers = Array.from(premMap.values());
   const basicMembers = Array.from(basicMap.values());
   const total = premMembers.length + basicMembers.length;
-  const paidTotal = premMembers.filter((m) => m.paid).length + basicMembers.filter((m) => m.paid).length;
+  const paidPrem = premMembers.filter((m) => m.paid).length;
+  const paidBasic = basicMembers.filter((m) => m.paid).length;
+  const paidTotal = paidPrem + paidBasic;
 
   renderCourse(premMembers, "summary-shinki-premium", "tbody-shinki-premium");
   renderCourse(basicMembers, "summary-shinki-basic", "tbody-shinki-basic");
 
   renderKpiValue("kpi-new-count", `${total}名`, `入金済み ${paidTotal}名`);
+
+  // 新規売上をKPIに反映
+  window._shinkiPremRevenue = paidPrem * SHINKI_PREMIUM_PRICE;
+  window._shinkiBasicRevenue = paidBasic * SHINKI_BASIC_PRICE;
+  window._newRevenue = window._shinkiPremRevenue + window._shinkiBasicRevenue;
+  updateTotalRevenue();
 }
 
 // gvizからCSV形式で行配列を取得するヘルパー
