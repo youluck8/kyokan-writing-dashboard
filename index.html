@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 Not Found</title>
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
@@ -118,34 +118,15 @@
       <div class="section-head">
         <h2>新規加入者</h2>
       </div>
-      <p class="roster-summary">現在 2名</p>
-      <table class="member-list shinki-table">
-        <thead>
-          <tr><th>氏名</th><th>コース</th><th>詳細</th></tr>
-        </thead>
-        <tbody id="tbody-shinki-list">
-          <tr class="shinki-row">
-            <td class="name">工藤 恵</td>
-            <td>プレミアム</td>
-            <td><button class="accordion-btn" data-member="kudo">▼ 事前アンケート</button></td>
-          </tr>
-          <tr class="accordion-pane" id="accordion-kudo" hidden>
-            <td colspan="3">
-              <div class="accordion-inner">（事前アンケートデータを後で追加）</div>
-            </td>
-          </tr>
-          <tr class="shinki-row">
-            <td class="name">佐藤 麻子</td>
-            <td>ベーシック</td>
-            <td><button class="accordion-btn" data-member="sato">▼ 事前アンケート</button></td>
-          </tr>
-          <tr class="accordion-pane" id="accordion-sato" hidden>
-            <td colspan="3">
-              <div class="accordion-inner">（事前アンケートデータを後で追加）</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <p class="roster-summary" id="summary-shinki">読み込み中...</p>
+      <div class="table-scroll">
+        <table class="member-list shinki-table">
+          <thead>
+            <tr><th>氏名</th><th>コース</th><th>状態</th></tr>
+          </thead>
+          <tbody id="tbody-shinki-list"></tbody>
+        </table>
+      </div>
     </section>
   </div>
 
@@ -195,6 +176,6 @@
 </div>
 </div>
 
-<script src="script.js?v=44"></script>
+<script src="script.js?v=45"></script>
 </body>
 </html>

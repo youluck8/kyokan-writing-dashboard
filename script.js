@@ -8,6 +8,8 @@ const PREMIUM_SHEET_ID = "1OMHSOrxjNJWAM7wuBSFv1t2n7p67Rj5sgRUPmDGLXN0";
 const BASIC_SHEET_ID = "1oGQaFvoUqVpGqznyLo8O2_xao9hQ_ZQNR33WCtZ28BQ";
 const NON_CONTINUER_SHEET_ID = "1hJJuKTRZo364NahVGgLgYxKvgYyPNtARH-_yd3-cPhw";
 const WITHDRAWAL_SHEET_ID = "1Ta-g1ZnzF41mPmlyBlcsaapTUoXfRACUqEEtumwzgNg";
+const SHINKI_PREMIUM_SHEET_ID = "1UBRxHPM_Ak5ED3C75xYExJCBZUUS4mv610Z4VzHUF3A";
+const SHINKI_BASIC_SHEET_ID = "1o-E6D-q1fWvpHAKs2gX5VC8UjilEBzHIroAPFYbJpow";
 const PREMIUM_PRICE = 180000;
 const BASIC_PRICE = 90000;
 const TOTAL_4KI_COUNT = 108; // 4期全体110名からインターン生2名を除いた実質対象数
@@ -294,6 +296,7 @@ async function loadData() {
 
   loadNonContinuers().catch((err) => console.error("non-continuer sheet load failed", err));
   loadWithdrawals().catch((err) => console.error("withdrawal sheet load failed", err));
+  loadShinkiMembers().catch((err) => console.error("shinki sheet load failed", err));
 }
 
 // 未継続者リスト: 列番号ではなく見出し名で読み取るため、列の追加/並び替えに強い。
@@ -378,7 +381,7 @@ function renderTopSummary(premiumStats, basicStats) {
     `継続率 ${retentionRate}%（プレミアム${premiumStats.total}名、ベーシック${basicStats.total}名）`
   );
 
-  renderKpiValue("kpi-new-count", `${NEW_MEMBER_COUNT}名`, "");
+  // kpi-new-count は loadShinkiMembers() が更新する
 
   const premiumRevenue = premiumStats.paid * PREMIUM_PRICE;
   const basicRevenue = basicStats.paid * BASIC_PRICE;
@@ -572,6 +575,106 @@ async function loadWithdrawals() {
     });
     tbody.appendChild(tr);
   });
+}
+
+// ==== 新規加入者 ====
+async function loadShinkiMembers() {
+  // 両シートを並列取得
+  const [premRows, basicRows] = await Promise.all([
+    fetchGvizCsv(SHINKI_PREMIUM_SHEET_ID),
+    fetchGvizCsv(SHINKI_BASIC_SHEET_ID),
+  ]);
+
+  // メールアドレスをキーに名寄せ（本登録完了日時がある行を優先）
+  const map = new Map(); // email -> {name, course, paid}
+
+  function mergeRows(rows, course) {
+    rows.forEach((r) => {
+      const email = (r[2] || "").trim().toLowerCase();
+      const name = ((r[3] || "") + " " + (r[4] || "")).trim();
+      const paid = !!(r[1] && r[1].trim());
+      if (!email || name === "") return;
+      const existing = map.get(email);
+      if (!existing) {
+        map.set(email, { name, course, paid });
+      } else {
+        // 入金済み情報があれば更新、コースは入金済みのものを優先
+        if (paid) {
+          map.set(email, { name, course, paid: true });
+        }
+      }
+    });
+  }
+
+  mergeRows(premRows, "プレミアム");
+  mergeRows(basicRows, "ベーシック");
+
+  const members = Array.from(map.values());
+  const paidCount = members.filter((m) => m.paid).length;
+  const unpaidCount = members.filter((m) => !m.paid).length;
+
+  const summaryEl = document.getElementById("summary-shinki");
+  if (summaryEl) {
+    summaryEl.textContent = `合計 ${members.length}名（入金済み ${paidCount}名・未受領 ${unpaidCount}名）`;
+  }
+
+  // KPI更新
+  renderKpiValue("kpi-new-count", `${members.length}名`, `入金済み ${paidCount}名`);
+
+  const tbody = document.getElementById("tbody-shinki-list");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  // プレミアム→ベーシック順、未受領を末尾にソート
+  const sorted = members.sort((a, b) => {
+    if (a.course !== b.course) return a.course === "プレミアム" ? -1 : 1;
+    if (a.paid !== b.paid) return a.paid ? -1 : 1;
+    return a.name.localeCompare(b.name, "ja");
+  });
+
+  sorted.forEach((m) => {
+    const tr = document.createElement("tr");
+    const tdName = document.createElement("td");
+    tdName.className = "name";
+    tdName.textContent = m.name;
+    const tdCourse = document.createElement("td");
+    tdCourse.textContent = m.course;
+    const tdStatus = document.createElement("td");
+    if (!m.paid) {
+      const badge = document.createElement("span");
+      badge.className = "unpaid-tag";
+      badge.textContent = "未受領";
+      tdStatus.appendChild(badge);
+    }
+    tr.appendChild(tdName);
+    tr.appendChild(tdCourse);
+    tr.appendChild(tdStatus);
+    tbody.appendChild(tr);
+  });
+}
+
+// gvizからCSV形式で行配列を取得するヘルパー
+async function fetchGvizCsv(sheetId, sheetName) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv` +
+    (sheetName ? `&sheet=${encodeURIComponent(sheetName)}` : "");
+  const res = await fetch(url);
+  const text = await res.text();
+  // 簡易CSV parse（ダブルクォート対応）
+  const lines = text.trim().split("\n");
+  const parse = (line) => {
+    const result = [];
+    let cur = "", inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { result.push(cur); cur = ""; }
+      else { cur += ch; }
+    }
+    result.push(cur);
+    return result;
+  };
+  // 1行目ヘッダーをスキップ
+  return lines.slice(1).map(parse);
 }
 
 // ==== タブ切り替え ====
