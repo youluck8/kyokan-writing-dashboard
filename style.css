@@ -451,6 +451,82 @@ table.withdrawal-table td.withdrawal-reason {
   display: block;
 }
 
+/* --- セクションアコーディオン（4期→5期タブ内） --- */
+.section-accordion-btn {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 18px;
+  font-weight: 900;
+  font-family: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: -0.01em;
+}
+.section-accordion-btn:hover { color: var(--nred); }
+.section-accordion-pane { margin-top: 20px; }
+
+/* --- プロモーション実績カード --- */
+.seminar-card {
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  background: var(--soft);
+}
+.seminar-card.done { opacity: 0.55; filter: grayscale(0.4); }
+.seminar-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.seminar-date {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.seminar-title {
+  font-size: 14px;
+  color: var(--muted);
+}
+.seminar-badge {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--gray-soft);
+  color: var(--gray);
+}
+.seminar-badge.cancelled {
+  background: #f0e0e0;
+  color: #c00;
+}
+.seminar-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.seminar-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.seminar-stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.seminar-stat-value {
+  font-size: 18px;
+  font-weight: 900;
+}
+
 /* --- 新規タブ --- */
 table.shinki-table { min-width: 500px; }
 .accordion-btn {

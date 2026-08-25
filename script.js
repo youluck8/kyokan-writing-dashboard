@@ -245,39 +245,7 @@ async function loadData() {
   document.getElementById("basicSheetLink").href = sheetLinkUrl(BASIC_SHEET_ID);
   document.getElementById("nonContinuerSheetLink").href = sheetLinkUrl(NON_CONTINUER_SHEET_ID);
 
-  try {
-    const mainRaw = await fetchGvizRows(SHEET_ID, MAIN_TAB_NAME);
-    render(toPlanRows(mainRaw));
-  } catch (err) {
-    console.error("main sheet load failed", err);
-  }
-
-  const emptyTable = { cols: [], rows: [] };
-  const [continueTable, newTable, gokiTable] = await Promise.all([
-    fetchGvizTable(SHEET_ID, PROMO_CONTINUE_TAB_NAME).catch((err) => {
-      console.error("【継続】プロモ tab load failed (未作成の可能性があります)", err);
-      return emptyTable;
-    }),
-    fetchGvizTable(SHEET_ID, PROMO_NEW_TAB_NAME).catch((err) => {
-      console.error("【新規】プロモ tab load failed (未作成の可能性があります)", err);
-      return emptyTable;
-    }),
-    fetchGvizTable(SHEET_ID, GOKI_TAB_NAME).catch((err) => {
-      console.error("5期スケジュール tab load failed (未作成の可能性があります)", err);
-      return emptyTable;
-    }),
-  ]);
-  const continueRows = toDynamicRows(continueTable);
-  const newRows = toDynamicRows(newTable);
-  const gokiRows = toDynamicRows(gokiTable);
-
-  const continueList = document.getElementById("promo-継続-list");
-  const newList = document.getElementById("promo-新規-list");
-  const gokiList = document.getElementById("goki-list");
-  if (continueList) buildPromoListItems(continueList, continueRows);
-  if (newList) buildPromoListItems(newList, newRows);
-  if (gokiList) buildPromoListItems(gokiList, gokiRows);
-  updateLastUpdated([...continueRows, ...newRows, ...gokiRows].map((r) => r["更新日"]));
+  renderSeminarCards();
 
   const [premium, basic] = await Promise.all([
     loadMemberSheet(PREMIUM_SHEET_ID, "プレミアム", "summary-premium", "tbody-premium-list").catch((err) => {
@@ -577,80 +545,164 @@ async function loadWithdrawals() {
   });
 }
 
+// ==== 7/31まーりん合同セミナー参加者メール（流入元タグ用）====
+const MARLIN_EMAILS = new Set([
+  "miyumiyumi1225@gmail.com","wiwikeiko@yahoo.co.jp","yayo.y.yayo@gmail.com",
+  "g1001432@gmail.com","nokymd999@gmail.com","atelier.mami.2014@gmail.com",
+  "narikosuke@gmail.com","kominencorea@gmail.com","tresor3090hm@gmail.com",
+  "rikazo99422000@gmail.com","windandsun37@gmail.com","flowermoon2525@gmail.com",
+  "hnl2kaori@docomo.ne.jp","mkawaguchi344@gmail.com","menkai.koai@gmail.com",
+  "s.h.081303@gmail.com","ayakomatsura1201@gmail.com","memeko.sugi.nagasaka@gmail.com",
+  "ikuratara2005@yahoo.co.jp","ayakemu2000@gmail.com","reiko.e@gmail.com",
+  "lightsteelprefabbuilder@gmail.com","kouki2619@gmail.com","q9411q@gmail.com",
+  "chica.pant2@gmail.com","natti518@icloud.com","tomoko555world@icloud.com",
+  "oriondaisuki28@gmail.com","ayanoren2912@gmail.com","ticorin-sakura@docomo.ne.jp",
+  "cct.jasmine100@gmail.com","chaochoco925@gmail.com","yuri.iyoda@gmail.com",
+  "fortunate418tiara@gmail.com","joelle.730721@gmail.com",
+  "happylife.coaching.988@gmail.com","ksksk1009@yahoo.co.jp","fukkoe23@jcom.zaq.ne.jp",
+  "kawashk342@gmail.com","uta1219@gmail.com","fusayonsama@gmail.com",
+  "kanahapuna@gmail.com","youuuluck@gmail.com","minakachiba9@gmail.com",
+  "yukitty0114@gmail.com","kenji7112@tiara.ocn.ne.jp","m-miyake.green@mineo.jp",
+  "keiko.imamura@couplan.com","gynn723@gmail.com","yeyang25@yahoo.co.jp",
+  "kenboumama7@gmail.com","310sayuriapple@gmail.com","tanmi.miya@gmail.com",
+  "juke33joint66@gmail.com","willvii@icloud.com","hananokailease@gmail.com",
+  "sano.hmm@gmail.com","kurupure@gmail.com","nagasato0729@gmail.com",
+  "1433.shizuko@gmail.com","yyshinshin0317@gmail.com",
+]);
+
+// ==== プロモーション：実施セミナー実績カード ====
+function renderSeminarCards() {
+  const container = document.getElementById("promo-seminar-list");
+  if (!container) return;
+
+  const today = new Date();
+  const seminars = [
+    { date: "2026-08-30", label: "8/30 説明会", sheetId: "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0", cancelled: false },
+    { date: "2026-08-28", label: "8/28 説明会", cancelled: true, cancelNote: "中止" },
+    { date: "2026-07-31", label: "7/31 峯山×まーりん合同セミナー", cancelled: false,
+      staticStats: { apply: 62, realtime: 53, archive: 22 } },
+    { date: "2026-08-16", label: "8/16 説明会", sheetId: "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0", cancelled: false },
+    { date: "2026-08-15", label: "8/15 説明会", sheetId: "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0", cancelled: false },
+    { date: "2026-08-14", label: "8/14 説明会", sheetId: "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0", cancelled: false },
+  ];
+
+  container.innerHTML = "";
+  seminars.forEach((s) => {
+    const isPast = new Date(s.date) < today;
+    const card = document.createElement("div");
+    card.className = "seminar-card" + (isPast ? " done" : "");
+
+    const head = document.createElement("div");
+    head.className = "seminar-card-head";
+    head.innerHTML = `<span class="seminar-date">${s.label}</span>` +
+      (s.cancelled ? `<span class="seminar-badge cancelled">${s.cancelNote || "中止"}</span>` : "");
+    card.appendChild(head);
+
+    if (!s.cancelled) {
+      const stats = document.createElement("div");
+      stats.className = "seminar-stats";
+      if (s.staticStats) {
+        stats.innerHTML = `
+          <div class="seminar-stat"><div class="seminar-stat-label">申込者数</div><div class="seminar-stat-value">${s.staticStats.apply}名</div></div>
+          <div class="seminar-stat"><div class="seminar-stat-label">リアルタイム参加</div><div class="seminar-stat-value">${s.staticStats.realtime}名</div></div>
+          <div class="seminar-stat"><div class="seminar-stat-label">アーカイブのみ</div><div class="seminar-stat-value">${s.staticStats.archive}名</div></div>
+        `;
+      } else if (s.sheetId) {
+        stats.innerHTML = `<div class="seminar-stat"><div class="seminar-stat-label">申込者数</div><div class="seminar-stat-value" id="apply-${s.date}">集計中...</div></div>`;
+        // 申込者数をgvizから集計
+        fetchGvizCsv(s.sheetId).then((rows) => {
+          const dateStr = s.date;
+          const count = rows.filter((r) => r[1] && r[1].startsWith(dateStr)).length;
+          const el = document.getElementById(`apply-${s.date}`);
+          if (el) el.textContent = `${count}名`;
+        }).catch(() => {
+          const el = document.getElementById(`apply-${s.date}`);
+          if (el) el.textContent = "-";
+        });
+      }
+      card.appendChild(stats);
+    }
+
+    container.appendChild(card);
+  });
+}
+
 // ==== 新規加入者 ====
 async function loadShinkiMembers() {
-  // 両シートを並列取得
   const [premRows, basicRows] = await Promise.all([
     fetchGvizCsv(SHINKI_PREMIUM_SHEET_ID),
     fetchGvizCsv(SHINKI_BASIC_SHEET_ID),
   ]);
 
-  // メールアドレスをキーに名寄せ（本登録完了日時がある行を優先）
-  const map = new Map(); // email -> {name, course, paid}
+  // メールで名寄せ、入金済み情報を優先
+  const premMap = new Map();
+  const basicMap = new Map();
 
-  function mergeRows(rows, course) {
+  function mergeInto(map, rows) {
     rows.forEach((r) => {
       const email = (r[2] || "").trim().toLowerCase();
       const name = ((r[3] || "") + " " + (r[4] || "")).trim();
       const paid = !!(r[1] && r[1].trim());
       if (!email || name === "") return;
-      const existing = map.get(email);
-      if (!existing) {
-        map.set(email, { name, course, paid });
-      } else {
-        // 入金済み情報があれば更新、コースは入金済みのものを優先
-        if (paid) {
-          map.set(email, { name, course, paid: true });
-        }
+      const ex = map.get(email);
+      if (!ex || (!ex.paid && paid)) {
+        map.set(email, { name, email, paid });
       }
     });
   }
 
-  mergeRows(premRows, "プレミアム");
-  mergeRows(basicRows, "ベーシック");
+  mergeInto(premMap, premRows);
+  mergeInto(basicMap, basicRows);
 
-  const members = Array.from(map.values());
-  const paidCount = members.filter((m) => m.paid).length;
-  const unpaidCount = members.filter((m) => !m.paid).length;
+  // ベーシックシートにあってプレミアムにも入金済みの場合はベーシックから除外
+  basicMap.forEach((v, email) => {
+    const prem = premMap.get(email);
+    if (prem && prem.paid) basicMap.delete(email);
+  });
 
-  const summaryEl = document.getElementById("summary-shinki");
-  if (summaryEl) {
-    summaryEl.textContent = `合計 ${members.length}名（入金済み ${paidCount}名・未受領 ${unpaidCount}名）`;
+  function renderCourse(members, summaryId, tbodyId) {
+    const unpaid = members.filter((m) => !m.paid);
+    const paid = members.filter((m) => m.paid);
+    const sorted = [...unpaid, ...paid];
+
+    const summaryEl = document.getElementById(summaryId);
+    if (summaryEl) summaryEl.textContent = `合計 ${members.length}名（入金済み ${paid.length}名・未受領 ${unpaid.length}名）`;
+
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    sorted.forEach((m) => {
+      const tr = document.createElement("tr");
+      const tdName = document.createElement("td");
+      tdName.className = "name";
+      tdName.textContent = m.name;
+      const tdStatus = document.createElement("td");
+      if (!m.paid) {
+        const badge = document.createElement("span");
+        badge.className = "unpaid-tag";
+        badge.textContent = "未受領";
+        tdStatus.appendChild(badge);
+      }
+      const tdSource = document.createElement("td");
+      if (MARLIN_EMAILS.has(m.email)) {
+        tdSource.innerHTML = `<span class="applied-badge">7/31まーりん合同</span>`;
+      }
+      tr.appendChild(tdName);
+      tr.appendChild(tdStatus);
+      tr.appendChild(tdSource);
+      tbody.appendChild(tr);
+    });
   }
 
-  // KPI更新
-  renderKpiValue("kpi-new-count", `${members.length}名`, `入金済み ${paidCount}名`);
+  const premMembers = Array.from(premMap.values());
+  const basicMembers = Array.from(basicMap.values());
+  const total = premMembers.length + basicMembers.length;
+  const paidTotal = premMembers.filter((m) => m.paid).length + basicMembers.filter((m) => m.paid).length;
 
-  const tbody = document.getElementById("tbody-shinki-list");
-  if (!tbody) return;
-  tbody.innerHTML = "";
+  renderCourse(premMembers, "summary-shinki-premium", "tbody-shinki-premium");
+  renderCourse(basicMembers, "summary-shinki-basic", "tbody-shinki-basic");
 
-  // プレミアム→ベーシック順、未受領を末尾にソート
-  const sorted = members.sort((a, b) => {
-    if (a.course !== b.course) return a.course === "プレミアム" ? -1 : 1;
-    if (a.paid !== b.paid) return a.paid ? -1 : 1;
-    return a.name.localeCompare(b.name, "ja");
-  });
-
-  sorted.forEach((m) => {
-    const tr = document.createElement("tr");
-    const tdName = document.createElement("td");
-    tdName.className = "name";
-    tdName.textContent = m.name;
-    const tdCourse = document.createElement("td");
-    tdCourse.textContent = m.course;
-    const tdStatus = document.createElement("td");
-    if (!m.paid) {
-      const badge = document.createElement("span");
-      badge.className = "unpaid-tag";
-      badge.textContent = "未受領";
-      tdStatus.appendChild(badge);
-    }
-    tr.appendChild(tdName);
-    tr.appendChild(tdCourse);
-    tr.appendChild(tdStatus);
-    tbody.appendChild(tr);
-  });
+  renderKpiValue("kpi-new-count", `${total}名`, `入金済み ${paidTotal}名`);
 }
 
 // gvizからCSV形式で行配列を取得するヘルパー
@@ -687,14 +739,14 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
   });
 });
 
-// ==== 新規タブ アコーディオン ====
-document.querySelectorAll(".accordion-btn").forEach((btn) => {
+// ==== セクションアコーディオン（4期→5期タブ内）====
+document.querySelectorAll(".section-accordion-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    const pane = document.getElementById("accordion-" + btn.dataset.member);
+    const pane = document.getElementById(btn.dataset.target);
     if (!pane) return;
     const isOpen = !pane.hidden;
     pane.hidden = isOpen;
-    btn.textContent = isOpen ? "▼ 事前アンケート" : "▲ 閉じる";
+    btn.textContent = (isOpen ? "▶ " : "▼ ") + btn.textContent.replace(/^[▶▼]\s*/, "");
   });
 });
 
