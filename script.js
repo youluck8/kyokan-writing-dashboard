@@ -241,7 +241,7 @@ async function loadData() {
   document.getElementById("basicSheetLink").href = sheetLinkUrl(BASIC_SHEET_ID);
   document.getElementById("nonContinuerSheetLink").href = sheetLinkUrl(NON_CONTINUER_SHEET_ID);
 
-  renderSeminarCards();
+  await renderSeminarCards();
 
   const [premium, basic] = await Promise.all([
     loadMemberSheet(PREMIUM_SHEET_ID, "プレミアム", "summary-premium", "tbody-premium-list").catch((err) => {
@@ -604,8 +604,11 @@ async function renderSeminarCards() {
     { date: "2026-08-30", label: "8/30 説明会", hasSheet: true },
     { date: "2026-08-28", label: "8/28 説明会", cancelled: true, cancelNote: "中止" },
     { date: "2026-07-31", label: "7/31 峯山×まーりん合同セミナー",
-      staticStats: { apply: 62, realtime: 53, archive: 22 },
-      marlinList: true },
+      staticStats: { apply: 62, realtime: 44, archive: 18 },
+      staticNames: [
+        ...["今枝 仁礼子","大城戸 佳子","宮本 弥生","小野 光一","山田 直樹","ユキエ マユミ(まみるん)","中口 成子","小峰 直保子","木村 恵美","り か","藤本 洋","石垣 志乃","澤村 香凛","川口 摩弓","菊永 恵妃","岩見 聖子","鳳 鈴華","杉浦 尚子","秦 小百合","小松 文美","狩野 狩野","島村 拓史","増田 和人","渡邊 智子","ほり ちか","内藤 正徳","清水 智子","森本 真理子","大久保 綾乃","三田村 知里","鈴木 茉莉花","山田 順子","伊與田 ユリ","峰尾 安梨沙","原田 加奈","中村 智子","關 妃","大橋 二佐江","河島 佳代子","宇田川 洋子","上田 房代","大塚 香奈子","岡部 貴之"].filter(n=>n).map(n=>({name:n,type:"realtime"})),
+        ...["千葉 未来香","今野 祐喜子","新井 乾司","三宅 めぐ美","イマムラ ケイコ","茂木 菜摘","加茂 野央","小林 京子","佐藤 小百合","三谷 英明","たなか ようこ","白石 みほ","OGASHIWA CHIKAE","佐野 博美","中川 毅文","永里 真由美","小林 靖江","よ しん"].map(n=>({name:n,type:"archive"})),
+      ] },
     { date: "2026-08-16", label: "8/16 説明会", hasSheet: true },
     { date: "2026-08-15", label: "8/15 説明会", hasSheet: true },
     { date: "2026-08-14", label: "8/14 説明会", hasSheet: true },
@@ -631,12 +634,37 @@ async function renderSeminarCards() {
       stats.className = "seminar-stats";
 
       if (s.staticStats) {
-        // まーりん：固定値
         stats.innerHTML = `
           <div class="seminar-stat"><div class="seminar-stat-label">申込者数</div><div class="seminar-stat-value">${s.staticStats.apply}名</div></div>
           <div class="seminar-stat"><div class="seminar-stat-label">リアルタイム参加</div><div class="seminar-stat-value">${s.staticStats.realtime}名</div></div>
           <div class="seminar-stat"><div class="seminar-stat-label">アーカイブのみ</div><div class="seminar-stat-value">${s.staticStats.archive}名</div></div>
         `;
+        card.appendChild(stats);
+        if (s.staticNames && s.staticNames.length > 0) {
+          const id = `seminar-acc-${accId++}`;
+          const btn = document.createElement("button");
+          btn.className = "accordion-btn";
+          btn.style.marginTop = "12px";
+          btn.textContent = "▼ 申込者一覧";
+          btn.addEventListener("click", () => {
+            const pane = document.getElementById(id);
+            if (!pane) return;
+            const open = !pane.hidden;
+            pane.hidden = open;
+            btn.textContent = open ? "▼ 申込者一覧" : "▲ 閉じる";
+          });
+          const pane = document.createElement("div");
+          pane.id = id;
+          pane.hidden = true;
+          pane.className = "seminar-names-pane";
+          pane.innerHTML = s.staticNames.map((e) =>
+            `<span class="seminar-name-tag">${e.name}<span class="seminar-referrer">${e.type === "realtime" ? "リアルタイム" : "アーカイブ"}</span></span>`
+          ).join("");
+          card.appendChild(btn);
+          card.appendChild(pane);
+        }
+        container.appendChild(card);
+        return;
       } else if (s.hasSheet) {
         const entries = byDate[s.date] || [];
         const withRef = entries.filter((e) => e.referrer).length;
