@@ -450,3 +450,24 @@ table.withdrawal-table td.withdrawal-reason {
 .tab-pane.active {
   display: block;
 }
+
+/* --- 新規タブ --- */
+table.shinki-table { min-width: 500px; }
+.accordion-btn {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--muted);
+}
+.accordion-btn:hover { background: #ececec; }
+.accordion-pane td { background: var(--blue-soft); }
+.accordion-inner {
+  padding: 12px 4px;
+  font-size: 13px;
+  color: #333;
+  white-space: pre-line;
+}

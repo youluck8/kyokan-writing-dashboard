@@ -11,8 +11,7 @@ const WITHDRAWAL_SHEET_ID = "1Ta-g1ZnzF41mPmlyBlcsaapTUoXfRACUqEEtumwzgNg";
 const PREMIUM_PRICE = 180000;
 const BASIC_PRICE = 90000;
 const TOTAL_4KI_COUNT = 108; // 4期全体110名からインターン生2名を除いた実質対象数
-// 新規入会のデータソースがまだ無いため、当面0固定。データソースができ次第、実データに差し替える。
-const NEW_MEMBER_COUNT = 0;
+const NEW_MEMBER_COUNT = 2; // 工藤恵(プレミアム)・佐藤麻子(ベーシック)
 const NEW_REVENUE = 0;
 const PASSWORD = "kyokan5ki";
 const REFRESH_INTERVAL_MS = 60 * 1000;
@@ -582,6 +581,17 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
     btn.classList.add("active");
     document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ==== 新規タブ アコーディオン ====
+document.querySelectorAll(".accordion-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const pane = document.getElementById("accordion-" + btn.dataset.member);
+    if (!pane) return;
+    const isOpen = !pane.hidden;
+    pane.hidden = isOpen;
+    btn.textContent = isOpen ? "▼ 事前アンケート" : "▲ 閉じる";
   });
 });
 
