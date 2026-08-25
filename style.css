@@ -526,6 +526,27 @@ table.withdrawal-table td.withdrawal-reason {
   font-size: 18px;
   font-weight: 900;
 }
+.seminar-names-pane {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.seminar-name-tag {
+  display: inline-flex;
+  flex-direction: column;
+  background: rgba(255,255,255,0.75);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.seminar-referrer {
+  font-size: 11px;
+  color: var(--blue);
+  font-weight: 700;
+  margin-top: 2px;
+}
 
 /* --- 新規タブ --- */
 table.shinki-table { min-width: 560px; }

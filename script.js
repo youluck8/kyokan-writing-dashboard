@@ -575,27 +575,51 @@ const MARLIN_EMAILS = new Set([
 ]);
 
 // ==== プロモーション：実施セミナー実績カード ====
-function renderSeminarCards() {
+const SETSUMEIKAI_SHEET_ID = "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0";
+
+async function renderSeminarCards() {
   const container = document.getElementById("promo-seminar-list");
   if (!container) return;
 
+  container.innerHTML = `<p class="roster-summary">読み込み中...</p>`;
+
+  // 説明会シートを一括取得して日付別に分類
+  let byDate = {};
+  try {
+    const rows = await fetchGvizCsv(SETSUMEIKAI_SHEET_ID);
+    rows.forEach((r) => {
+      const dateStr = (r[1] || "").trim().substring(0, 10);
+      if (!dateStr) return;
+      if (!byDate[dateStr]) byDate[dateStr] = [];
+      const name = ((r[3] || "") + " " + (r[4] || "")).trim();
+      const referrer = (r[5] || "").trim();
+      if (name) byDate[dateStr].push({ name, referrer });
+    });
+  } catch (e) {
+    console.error("setsumeikai sheet load failed", e);
+  }
+
   const today = new Date();
   const seminars = [
-    { date: "2026-08-30", label: "8/30 説明会", sheetId: "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0", cancelled: false },
+    { date: "2026-08-30", label: "8/30 説明会", hasSheet: true },
     { date: "2026-08-28", label: "8/28 説明会", cancelled: true, cancelNote: "中止" },
-    { date: "2026-07-31", label: "7/31 峯山×まーりん合同セミナー", cancelled: false,
-      staticStats: { apply: 62, realtime: 53, archive: 22 } },
-    { date: "2026-08-16", label: "8/16 説明会", sheetId: "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0", cancelled: false },
-    { date: "2026-08-15", label: "8/15 説明会", sheetId: "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0", cancelled: false },
-    { date: "2026-08-14", label: "8/14 説明会", sheetId: "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0", cancelled: false },
+    { date: "2026-07-31", label: "7/31 峯山×まーりん合同セミナー",
+      staticStats: { apply: 62, realtime: 53, archive: 22 },
+      marlinList: true },
+    { date: "2026-08-16", label: "8/16 説明会", hasSheet: true },
+    { date: "2026-08-15", label: "8/15 説明会", hasSheet: true },
+    { date: "2026-08-14", label: "8/14 説明会", hasSheet: true },
   ];
 
+  let accId = 0;
   container.innerHTML = "";
+
   seminars.forEach((s) => {
     const isPast = new Date(s.date) < today;
     const card = document.createElement("div");
     card.className = "seminar-card" + (isPast ? " done" : "");
 
+    // ヘッダー行
     const head = document.createElement("div");
     head.className = "seminar-card-head";
     head.innerHTML = `<span class="seminar-date">${s.label}</span>` +
@@ -605,24 +629,50 @@ function renderSeminarCards() {
     if (!s.cancelled) {
       const stats = document.createElement("div");
       stats.className = "seminar-stats";
+
       if (s.staticStats) {
+        // まーりん：固定値
         stats.innerHTML = `
           <div class="seminar-stat"><div class="seminar-stat-label">申込者数</div><div class="seminar-stat-value">${s.staticStats.apply}名</div></div>
           <div class="seminar-stat"><div class="seminar-stat-label">リアルタイム参加</div><div class="seminar-stat-value">${s.staticStats.realtime}名</div></div>
           <div class="seminar-stat"><div class="seminar-stat-label">アーカイブのみ</div><div class="seminar-stat-value">${s.staticStats.archive}名</div></div>
         `;
-      } else if (s.sheetId) {
-        stats.innerHTML = `<div class="seminar-stat"><div class="seminar-stat-label">申込者数</div><div class="seminar-stat-value" id="apply-${s.date}">集計中...</div></div>`;
-        // 申込者数をgvizから集計
-        fetchGvizCsv(s.sheetId).then((rows) => {
-          const dateStr = s.date;
-          const count = rows.filter((r) => r[1] && r[1].startsWith(dateStr)).length;
-          const el = document.getElementById(`apply-${s.date}`);
-          if (el) el.textContent = `${count}名`;
-        }).catch(() => {
-          const el = document.getElementById(`apply-${s.date}`);
-          if (el) el.textContent = "-";
-        });
+      } else if (s.hasSheet) {
+        const entries = byDate[s.date] || [];
+        const withRef = entries.filter((e) => e.referrer).length;
+        stats.innerHTML = `<div class="seminar-stat"><div class="seminar-stat-label">申込者数</div><div class="seminar-stat-value">${entries.length}名</div></div>` +
+          (withRef ? `<div class="seminar-stat"><div class="seminar-stat-label">紹介あり</div><div class="seminar-stat-value">${withRef}名</div></div>` : "");
+        const names = entries;
+
+        // 申込者一覧アコーディオン
+        if (names.length > 0) {
+          const id = `seminar-acc-${accId++}`;
+          const btn = document.createElement("button");
+          btn.className = "accordion-btn";
+          btn.style.marginTop = "12px";
+          btn.textContent = "▼ 申込者一覧";
+          btn.addEventListener("click", () => {
+            const pane = document.getElementById(id);
+            if (!pane) return;
+            const open = !pane.hidden;
+            pane.hidden = open;
+            btn.textContent = open ? "▼ 申込者一覧" : "▲ 閉じる";
+          });
+
+          const pane = document.createElement("div");
+          pane.id = id;
+          pane.hidden = true;
+          pane.className = "seminar-names-pane";
+          pane.innerHTML = names.map((n) =>
+            `<span class="seminar-name-tag">${n.name}${n.referrer ? `<span class="seminar-referrer">紹介：${n.referrer}</span>` : ""}</span>`
+          ).join("");
+
+          card.appendChild(stats);
+          card.appendChild(btn);
+          card.appendChild(pane);
+          container.appendChild(card);
+          return;
+        }
       }
       card.appendChild(stats);
     }
