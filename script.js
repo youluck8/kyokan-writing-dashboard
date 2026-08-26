@@ -422,7 +422,12 @@ async function loadMemberSheet(sheetId, courseLabel, summaryElId, tbodyId) {
     tbody.appendChild(emptyRow(2));
   } else {
     sorted.forEach((m) => {
-      tbody.appendChild(memberRow(m));
+      const result = memberRow(m);
+      if (Array.isArray(result)) {
+        result.forEach((row) => tbody.appendChild(row));
+      } else {
+        tbody.appendChild(result);
+      }
     });
   }
 
@@ -430,10 +435,16 @@ async function loadMemberSheet(sheetId, courseLabel, summaryElId, tbodyId) {
 }
 
 function memberRow(m) {
+  const fullName = `${m.lastName} ${m.firstName}`.trim() || "-";
+
+  // アンケート突合：姓名スペースなし・あり両方で検索
+  const nameNoSpace = `${m.lastName}${m.firstName}`.trim();
+  const enq = enqueteMap[fullName] || enqueteMap[nameNoSpace]
+    || Object.values(enqueteMap).find((e) => e.name.replace(/\s/g, "") === nameNoSpace);
+
   const tr = document.createElement("tr");
   const tdName = document.createElement("td");
   tdName.className = "name";
-  const fullName = `${m.lastName} ${m.firstName}`.trim() || "-";
   tdName.textContent = fullName;
   if (!m.completedAt) {
     const tag = document.createElement("span");
@@ -442,6 +453,43 @@ function memberRow(m) {
     tdName.appendChild(document.createTextNode(" "));
     tdName.appendChild(tag);
   }
+
+  // アンケートボタン
+  if (enq) {
+    const btn = document.createElement("button");
+    btn.className = "enq-inline-btn";
+    btn.textContent = "アンケート";
+    btn.title = "事前アンケート回答を表示";
+    tdName.appendChild(document.createTextNode(" "));
+    tdName.appendChild(btn);
+
+    const trEnq = document.createElement("tr");
+    trEnq.className = "enq-inline-row";
+    const tdEnq = document.createElement("td");
+    tdEnq.colSpan = 2;
+    tdEnq.className = "enq-inline-cell";
+    const body = buildEnqueteBody(enq);
+    body.hidden = true;
+    tdEnq.appendChild(body);
+    trEnq.appendChild(tdEnq);
+    trEnq.hidden = true;
+
+    btn.addEventListener("click", () => {
+      const open = trEnq.hidden;
+      trEnq.hidden = !open;
+      body.hidden = !open;
+      btn.classList.toggle("open", open);
+      btn.textContent = open ? "閉じる" : "アンケート";
+    });
+
+    const tdNotes = document.createElement("td");
+    tdNotes.className = "notes";
+    tdNotes.textContent = m.notes || "-";
+    tr.appendChild(tdName);
+    tr.appendChild(tdNotes);
+    return [tr, trEnq];
+  }
+
   const tdNotes = document.createElement("td");
   tdNotes.className = "notes";
   tdNotes.textContent = m.notes || "-";
@@ -694,6 +742,35 @@ async function loadStepMailStatus() {
 // ==== 事前アンケート ====
 const ENQUETE_SHEET_ID = "16iJ3SESmXqzxqxq9g1ufuAXhX00F_COv_HAEgHox90Q";
 
+// 名前→アンケート回答のグローバルマップ（継続者名簿との突合に使用）
+let enqueteMap = {};
+
+// アンケート回答からカード本体のDOMを生成する共通関数
+function buildEnqueteBody(row) {
+  const body = document.createElement("div");
+  body.className = "enquete-card-body";
+  body.hidden = true;
+  const questions = [
+    { label: "4期でやったこと・一番の収穫", text: row.q1 },
+    { label: "4期でやりきれなかったこと", text: row.q2 },
+    { label: "5期でやりたいこと", text: row.q3 },
+    { label: "質問・その他", text: row.q4 },
+  ];
+  questions.forEach(({ label, text }) => {
+    if (!text) return;
+    const dl = document.createElement("dl");
+    dl.className = "enquete-qa";
+    const dt = document.createElement("dt");
+    dt.textContent = label;
+    const dd = document.createElement("dd");
+    dd.textContent = text;
+    dl.appendChild(dt);
+    dl.appendChild(dd);
+    body.appendChild(dl);
+  });
+  return body;
+}
+
 async function loadEnquete() {
   const container = document.getElementById("enquete-list");
   const summaryEl = document.getElementById("summary-enquete");
@@ -721,6 +798,10 @@ async function loadEnquete() {
 
   if (summaryEl) summaryEl.textContent = `${rows.length}名が回答`;
 
+  // グローバルマップに保存（継続者名簿との突合用）
+  enqueteMap = {};
+  rows.forEach((r) => { enqueteMap[r.name] = r; });
+
   let allItems = [];
 
   function render(filtered) {
@@ -729,8 +810,7 @@ async function loadEnquete() {
       container.innerHTML = `<p class="roster-summary">該当なし</p>`;
       return;
     }
-    filtered.forEach((row, i) => {
-      const id = `enq-${i}`;
+    filtered.forEach((row) => {
       const card = document.createElement("div");
       card.className = "enquete-card";
 
@@ -739,29 +819,7 @@ async function loadEnquete() {
       header.textContent = row.name;
       header.setAttribute("aria-expanded", "false");
 
-      const body = document.createElement("div");
-      body.className = "enquete-card-body";
-      body.hidden = true;
-      body.id = id;
-
-      const questions = [
-        { label: "4期でやったこと・一番の収穫", text: row.q1 },
-        { label: "4期でやりきれなかったこと", text: row.q2 },
-        { label: "5期でやりたいこと", text: row.q3 },
-        { label: "質問・その他", text: row.q4 },
-      ];
-      questions.forEach(({ label, text }) => {
-        if (!text) return;
-        const dl = document.createElement("dl");
-        dl.className = "enquete-qa";
-        const dt = document.createElement("dt");
-        dt.textContent = label;
-        const dd = document.createElement("dd");
-        dd.textContent = text;
-        dl.appendChild(dt);
-        dl.appendChild(dd);
-        body.appendChild(dl);
-      });
+      const body = buildEnqueteBody(row);
 
       header.addEventListener("click", () => {
         const open = !body.hidden;
