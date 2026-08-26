@@ -549,9 +549,16 @@ table.withdrawal-table td.withdrawal-reason {
 }
 
 /* --- ステップメール配信状況 --- */
-table.stepmail-table { min-width: 640px; }
-table.stepmail-table td { font-size: 13px; vertical-align: middle; }
+table.stepmail-table { min-width: 860px; }
+table.stepmail-table td, table.stepmail-table th { font-size: 13px; vertical-align: middle; }
 tr.stepmail-today td { background: #fffbea; font-weight: 700; }
+.stepmail-date-cell { white-space: nowrap; }
+.stepmail-time {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
 .stepmail-today-badge {
   display: inline-flex;
   padding: 2px 8px;
@@ -560,9 +567,18 @@ tr.stepmail-today td { background: #fffbea; font-weight: 700; }
   font-weight: 800;
   background: var(--gold-soft);
   color: var(--gold);
-  margin-left: 4px;
+  margin-left: 6px;
 }
 .stepmail-pending { color: #bbb; font-size: 12px; }
+.stepmail-body-cell {
+  background: var(--soft);
+  font-size: 13px;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-all;
+  padding: 16px 20px;
+  line-height: 1.8;
+}
 .sender-oda { color: var(--nred); font-weight: 700; }
 .sender-mineyama { color: var(--blue); font-weight: 700; }
 .openrate-high { color: var(--green); font-weight: 800; }

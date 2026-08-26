@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 Not Found</title>
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 
@@ -64,13 +64,29 @@
     <section class="section">
       <div class="section-head">
         <h2>ステップメール配信状況</h2>
+        <a class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1DFuxfID3nIkS1qxKTycr3-Y5auJ2RXHoYTA3zJ02SrQ/edit#gid=0" target="_blank" rel="noopener">シートを開く →</a>
       </div>
       <div class="table-scroll">
         <table class="member-list stepmail-table">
           <thead>
-            <tr><th>日付</th><th>配信者</th><th>件名</th><th>配信数（合計）</th><th>開封率（合計）</th></tr>
+            <tr><th>配信日時</th><th>配信者</th><th>件名</th><th>配信数①</th><th>開封率①</th><th>配信数②</th><th>開封率②</th><th>合計配信数</th><th>合計開封率</th></tr>
           </thead>
           <tbody id="tbody-stepmail"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>織田クラブメール配信状況</h2>
+        <a class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1DFuxfID3nIkS1qxKTycr3-Y5auJ2RXHoYTA3zJ02SrQ/edit" target="_blank" rel="noopener">シートを開く →</a>
+      </div>
+      <div class="table-scroll">
+        <table class="member-list stepmail-table">
+          <thead>
+            <tr><th>配信日時</th><th>配信者</th><th>件名</th><th>NAHクラブ生</th><th>開封率</th><th>サバイバル</th><th>開封率</th><th>合計開封率</th></tr>
+          </thead>
+          <tbody id="tbody-oda-mail"></tbody>
         </table>
       </div>
     </section>
@@ -186,6 +202,6 @@
 </div>
 </div>
 
-<script src="script.js?v=55"></script>
+<script src="script.js?v=56"></script>
 </body>
 </html>

@@ -577,75 +577,151 @@ const MARLIN_EMAILS = new Set([
 ]);
 
 // ==== ステップメール配信状況 ====
-async function loadStepMailStatus() {
-  const tbody = document.getElementById("tbody-stepmail");
-  if (!tbody) return;
+// シート構成（両タブ共通）:
+// c[0]=対象, c[1]=日付, c[2]=曜日, c[3]=時刻, c[4]=配信者名, c[5]=件名, c[6]=原稿(本文)
+// c[7]=MYASP/配信先1, c[8]=配信数1, c[9]=開封率1, c[10]=配信数2, c[11]=開封率2, c[12]=合計配信数, c[13]=合計開封率
 
-  const table = await fetchGvizTable(STEPMAIL_SHEET_ID, undefined, true);
-  // 1行目がスプレッドシートタイトル行、2行目がサブヘッダー行のため
-  // c[0]が"対象"の行はスキップして実データのみ取り出す
-  const rows = (table.rows || [])
-    .map((r) => (r.c || []).map((c) => cellValue(c) || ""))
-    .filter((r) => r[1] && r[1] !== "" && r[0] !== "対象");
+let _stepmailAccId = 0;
 
-  // 今日の日付を「8月26日」形式に変換して照合
+function buildStepMailTable(rows, tbody, colDefs) {
+  // 今日の日付を「8月26日」形式で照合
   const now = new Date();
   const todayLabel = `${now.getMonth() + 1}月${now.getDate()}日`;
 
   tbody.innerHTML = "";
-  if (rows.length === 0) {
-    tbody.appendChild(emptyRow(5));
+  // サブヘッダー行（c[0]="対象"）と日付空の行を除外
+  const dataRows = rows.filter((r) => r[1] && r[0] !== "対象");
+  if (dataRows.length === 0) {
+    tbody.appendChild(emptyRow(colDefs.length + 2)); // 日付+時刻+件名+cols
     return;
   }
 
-  rows.forEach((r) => {
+  dataRows.forEach((r) => {
     const dateLabel = r[1] || "";
+    const time = r[3] || "";
     const sender = r[4] || "";
     const subject = r[5] || "";
-    const totalCount = r[12] || "";
-    const openRate = r[13] || "";
+    const body = r[6] || "";
     const isToday = dateLabel === todayLabel;
+    const accId = `sm-acc-${_stepmailAccId++}`;
 
+    // メイン行
     const tr = document.createElement("tr");
     if (isToday) tr.classList.add("stepmail-today");
 
+    // 配信日時セル
     const tdDate = document.createElement("td");
-    tdDate.textContent = dateLabel;
+    tdDate.className = "stepmail-date-cell";
+    const dateSpan = document.createElement("span");
+    dateSpan.textContent = dateLabel;
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "stepmail-time";
+    timeSpan.textContent = time;
+    tdDate.appendChild(dateSpan);
+    tdDate.appendChild(timeSpan);
     if (isToday) {
       const badge = document.createElement("span");
       badge.className = "stepmail-today-badge";
       badge.textContent = "本日";
-      tdDate.appendChild(document.createTextNode(" "));
       tdDate.appendChild(badge);
     }
 
+    // 配信者セル
     const tdSender = document.createElement("td");
     tdSender.textContent = sender;
     tdSender.className = sender.includes("織田") ? "sender-oda" : "sender-mineyama";
 
+    // 件名セル（本文があればアコーディオンボタン付き）
     const tdSubject = document.createElement("td");
-    tdSubject.textContent = subject || "-";
-
-    const tdCount = document.createElement("td");
-    tdCount.textContent = totalCount ? `${Number(totalCount).toLocaleString()}通` : "結果待ち";
-    tdCount.className = totalCount ? "" : "stepmail-pending";
-
-    const tdRate = document.createElement("td");
-    tdRate.textContent = openRate || (totalCount ? "-" : "結果待ち");
-    if (openRate) {
-      const rate = parseFloat(openRate);
-      tdRate.className = rate >= 45 ? "openrate-high" : rate >= 35 ? "openrate-mid" : "openrate-low";
-    } else {
-      tdRate.className = "stepmail-pending";
+    const subjectText = document.createElement("span");
+    subjectText.textContent = subject || "-";
+    tdSubject.appendChild(subjectText);
+    if (body) {
+      const btn = document.createElement("button");
+      btn.className = "accordion-btn";
+      btn.style.marginLeft = "8px";
+      btn.textContent = "▼ 本文";
+      btn.addEventListener("click", () => {
+        const pane = document.getElementById(accId);
+        if (!pane) return;
+        const open = !pane.hidden;
+        pane.hidden = open;
+        btn.textContent = open ? "▼ 本文" : "▲ 閉じる";
+      });
+      tdSubject.appendChild(btn);
     }
 
     tr.appendChild(tdDate);
     tr.appendChild(tdSender);
     tr.appendChild(tdSubject);
-    tr.appendChild(tdCount);
-    tr.appendChild(tdRate);
+
+    // 動的列（配信数・開封率）
+    colDefs.forEach(({ idx, isRate }) => {
+      const val = r[idx] || "";
+      const td = document.createElement("td");
+      if (!val || val === "0") {
+        td.textContent = "-";
+        td.className = "stepmail-pending";
+      } else if (isRate) {
+        td.textContent = val;
+        const rate = parseFloat(val);
+        td.className = rate >= 45 ? "openrate-high" : rate >= 35 ? "openrate-mid" : "openrate-low";
+      } else {
+        td.textContent = `${Number(val).toLocaleString()}通`;
+      }
+      tr.appendChild(td);
+    });
+
     tbody.appendChild(tr);
+
+    // 本文アコーディオン行
+    if (body) {
+      const trAcc = document.createElement("tr");
+      trAcc.id = accId;
+      trAcc.hidden = true;
+      const tdAcc = document.createElement("td");
+      tdAcc.colSpan = colDefs.length + 3;
+      tdAcc.className = "stepmail-body-cell";
+      tdAcc.textContent = body;
+      trAcc.appendChild(tdAcc);
+      tbody.appendChild(trAcc);
+    }
   });
+}
+
+async function loadStepMailStatus() {
+  const [stepTable, odaTable] = await Promise.all([
+    fetchGvizTable(STEPMAIL_SHEET_ID, "ステップメール", true).catch(() => ({ rows: [] })),
+    fetchGvizTable(STEPMAIL_SHEET_ID, "織田クラブメール", true).catch(() => ({ rows: [] })),
+  ]);
+
+  const toRaw = (table) =>
+    (table.rows || []).map((r) => (r.c || []).map((c) => cellValue(c) || ""));
+
+  // ステップメール: 合計配信数(c[12]) + 合計開封率(c[13])
+  const stepTbody = document.getElementById("tbody-stepmail");
+  if (stepTbody) {
+    buildStepMailTable(toRaw(stepTable), stepTbody, [
+      { idx: 8, isRate: false, label: "配信数①" },
+      { idx: 9, isRate: true, label: "開封率①" },
+      { idx: 10, isRate: false, label: "配信数②" },
+      { idx: 11, isRate: true, label: "開封率②" },
+      { idx: 12, isRate: false, label: "合計配信数" },
+      { idx: 13, isRate: true, label: "合計開封率" },
+    ]);
+  }
+
+  // 織田クラブメール: NAHクラブ生(c[8])・開封率(c[9]) + サバイバル(c[10])・開封率(c[11]) + 合計開封率(c[12])
+  const odaTbody = document.getElementById("tbody-oda-mail");
+  if (odaTbody) {
+    buildStepMailTable(toRaw(odaTable), odaTbody, [
+      { idx: 8, isRate: false, label: "NAHクラブ生" },
+      { idx: 9, isRate: true, label: "開封率" },
+      { idx: 10, isRate: false, label: "サバイバル" },
+      { idx: 11, isRate: true, label: "開封率" },
+      { idx: 12, isRate: true, label: "合計開封率" },
+    ]);
+  }
 }
 
 // ==== プロモーション：実施セミナー実績カード ====
