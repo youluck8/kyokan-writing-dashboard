@@ -470,6 +470,14 @@ table.withdrawal-table td.withdrawal-reason {
 }
 .section-accordion-btn:hover { color: var(--nred); }
 .section-accordion-pane { margin-top: 20px; }
+.acc-sheet-link {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  margin-top: 0;
+  flex-shrink: 0;
+}
 
 /* --- プロモーション実績カード --- */
 .seminar-card {

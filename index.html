@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 Not Found</title>
-<link rel="stylesheet" href="style.css?v=17">
+<link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
 
@@ -53,46 +53,60 @@
 
   <!-- タブナビゲーション -->
   <nav class="tab-nav">
-    <button class="tab-btn active" data-tab="tab-promo">プロモーション</button>
+    <button class="tab-btn active" data-tab="tab-stepmail">ステップメール</button>
+    <button class="tab-btn" data-tab="tab-seminar">実施セミナー・説明会</button>
     <button class="tab-btn" data-tab="tab-4to5">4期→5期</button>
     <button class="tab-btn" data-tab="tab-shinki">新規</button>
     <button class="tab-btn" data-tab="tab-taikai">退会者</button>
   </nav>
 
-  <!-- プロモーションタブ：実施セミナー実績 -->
-  <div class="tab-pane active" id="tab-promo">
+  <!-- ステップメールタブ -->
+  <div class="tab-pane active" id="tab-stepmail">
+
+    <!-- ステップメール配信状況（アコーディオン） -->
     <section class="section">
-      <div class="section-head">
-        <h2>ステップメール配信状況</h2>
-        <a class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1DFuxfID3nIkS1qxKTycr3-Y5auJ2RXHoYTA3zJ02SrQ/edit#gid=0" target="_blank" rel="noopener">シートを開く →</a>
-      </div>
-      <div class="table-scroll">
-        <table class="member-list stepmail-table">
-          <thead>
-            <tr><th>配信日時</th><th>配信者</th><th>件名</th><th>配信数①</th><th>開封率①</th><th>配信数②</th><th>開封率②</th><th>合計配信数</th><th>合計開封率</th></tr>
-          </thead>
-          <tbody id="tbody-stepmail"></tbody>
-        </table>
+      <button class="section-accordion-btn active" data-target="pane-stepmail">
+        ▼ ステップメール配信状況
+        <a class="sheet-link small-link acc-sheet-link" href="https://docs.google.com/spreadsheets/d/1DFuxfID3nIkS1qxKTycr3-Y5auJ2RXHoYTA3zJ02SrQ/edit" target="_blank" rel="noopener" onclick="event.stopPropagation()">シートを開く →</a>
+      </button>
+      <div class="section-accordion-pane" id="pane-stepmail">
+        <div class="table-scroll" style="margin-top:16px;">
+          <table class="member-list stepmail-table">
+            <thead>
+              <tr><th>配信日時</th><th>配信者</th><th>件名</th><th>配信数①</th><th>開封率①</th><th>配信数②</th><th>開封率②</th><th>合計配信数</th><th>合計開封率</th></tr>
+            </thead>
+            <tbody id="tbody-stepmail"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
+    <!-- 織田クラブメール配信状況（アコーディオン） -->
     <section class="section">
-      <div class="section-head">
-        <h2>織田クラブメール配信状況</h2>
-        <a class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1DFuxfID3nIkS1qxKTycr3-Y5auJ2RXHoYTA3zJ02SrQ/edit" target="_blank" rel="noopener">シートを開く →</a>
-      </div>
-      <div class="table-scroll">
-        <table class="member-list stepmail-table">
-          <thead>
-            <tr><th>配信日時</th><th>配信者</th><th>件名</th><th>NAHクラブ生</th><th>開封率</th><th>サバイバル</th><th>開封率</th><th>合計開封率</th></tr>
-          </thead>
-          <tbody id="tbody-oda-mail"></tbody>
-        </table>
+      <button class="section-accordion-btn" data-target="pane-oda-mail">
+        ▶ 織田クラブメール配信状況
+        <a class="sheet-link small-link acc-sheet-link" href="https://docs.google.com/spreadsheets/d/1DFuxfID3nIkS1qxKTycr3-Y5auJ2RXHoYTA3zJ02SrQ/edit" target="_blank" rel="noopener" onclick="event.stopPropagation()">シートを開く →</a>
+      </button>
+      <div class="section-accordion-pane" id="pane-oda-mail" hidden>
+        <div class="table-scroll" style="margin-top:16px;">
+          <table class="member-list stepmail-table">
+            <thead>
+              <tr><th>配信日時</th><th>配信者</th><th>件名</th><th>NAHクラブ生</th><th>開封率</th><th>サバイバル</th><th>開封率</th><th>合計開封率</th></tr>
+            </thead>
+            <tbody id="tbody-oda-mail"></tbody>
+          </table>
+        </div>
       </div>
     </section>
+
+  </div>
+
+  <!-- 実施セミナー・説明会タブ -->
+  <div class="tab-pane" id="tab-seminar">
     <section class="section">
       <div class="section-head">
         <h2>実施セミナー・説明会 実績</h2>
+        <a class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0/edit" target="_blank" rel="noopener">シートを開く →</a>
       </div>
       <div id="promo-seminar-list">
         <!-- 実績カードをJSで生成 -->
@@ -100,7 +114,7 @@
     </section>
   </div>
 
-  <!-- 4期→5期タブ：継続者・未継続者をプルダウンで切り替え -->
+  <!-- 4期→5期タブ：継続者・未継続者 -->
   <div class="tab-pane" id="tab-4to5">
 
     <!-- 継続者アコーディオン -->
@@ -146,6 +160,7 @@
     <section class="section">
       <div class="section-head">
         <h2>新規加入者（プレミアム）</h2>
+        <a class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1UBRxHPM_Ak5ED3C75xYExJCBZUUS4mv610Z4VzHUF3A/edit" target="_blank" rel="noopener">シートを開く →</a>
       </div>
       <p class="roster-summary" id="summary-shinki-premium">読み込み中...</p>
       <div class="table-scroll">
@@ -161,6 +176,7 @@
     <section class="section">
       <div class="section-head">
         <h2>新規加入者（ベーシック）</h2>
+        <a class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1o-E6D-q1fWvpHAKs2gX5VC8UjilEBzHIroAPFYbJpow/edit" target="_blank" rel="noopener">シートを開く →</a>
       </div>
       <p class="roster-summary" id="summary-shinki-basic">読み込み中...</p>
       <div class="table-scroll">
@@ -180,7 +196,7 @@
     <section class="section">
       <div class="section-head">
         <h2>退会者一覧</h2>
-        <a id="withdrawalSheetLink" class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1Ta-g1ZnzF41mPmlyBlcsaapTUoXfRACUqEEtumwzgNg/edit" target="_blank" rel="noopener">シートを開く →</a>
+        <a class="sheet-link small-link" href="https://docs.google.com/spreadsheets/d/1Ta-g1ZnzF41mPmlyBlcsaapTUoXfRACUqEEtumwzgNg/edit" target="_blank" rel="noopener">シートを開く →</a>
       </div>
       <p class="roster-summary" id="summary-withdrawal">読み込み中...</p>
       <p class="note" style="margin-bottom:16px;">※入金後キャンセルのみ記載（入金前キャンセルは除く）</p>
@@ -202,6 +218,6 @@
 </div>
 </div>
 
-<script src="script.js?v=56"></script>
+<script src="script.js?v=57"></script>
 </body>
 </html>
