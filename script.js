@@ -583,16 +583,20 @@ async function renderSeminarCards() {
 
   container.innerHTML = `<p class="roster-summary">読み込み中...</p>`;
 
-  // 説明会シートを一括取得して日付別に分類
+  // 説明会シートを一括取得して日付別に分類（fetchGvizTableでJSON取得）
   let byDate = {};
   try {
-    const rows = await fetchGvizCsv(SETSUMEIKAI_SHEET_ID);
-    rows.forEach((r) => {
-      const dateStr = (r[1] || "").trim().substring(0, 10);
+    const table = await fetchGvizTable(SETSUMEIKAI_SHEET_ID, undefined, true);
+    (table.rows || []).forEach((r) => {
+      const c = r.c || [];
+      const rawDate = cellValue(c[1]);
+      const dateStr = rawDate ? rawDate.trim().substring(0, 10) : "";
       if (!dateStr) return;
       if (!byDate[dateStr]) byDate[dateStr] = [];
-      const name = ((r[3] || "") + " " + (r[4] || "")).trim();
-      const referrer = (r[5] || "").trim();
+      const sei = cellValue(c[3]) || "";
+      const mei = cellValue(c[4]) || "";
+      const name = (sei + " " + mei).trim();
+      const referrer = (cellValue(c[5]) || "").trim();
       if (name) byDate[dateStr].push({ name, referrer });
     });
   } catch (e) {
@@ -601,8 +605,8 @@ async function renderSeminarCards() {
 
   const today = new Date();
   const seminars = [
-    { date: "2026-08-30", label: "8/30 説明会", hasSheet: true },
-    { date: "2026-08-28", label: "8/28 説明会", cancelled: true, cancelNote: "中止" },
+    { date: "2026-08-30", label: "8/30 説明会", hasSheet: true, hideReferrer: true },
+    { date: "2026-08-28", label: "8/28 説明会", cancelled: true, cancelNote: "中止", done: true },
     { date: "2026-07-31", label: "7/31 峯山×まーりん合同セミナー",
       staticStats: { apply: 62, realtime: 44, archive: 18 },
       staticNames: [
@@ -620,7 +624,7 @@ async function renderSeminarCards() {
   seminars.forEach((s) => {
     const isPast = new Date(s.date) < today;
     const card = document.createElement("div");
-    card.className = "seminar-card" + (isPast ? " done" : "");
+    card.className = "seminar-card" + (isPast || s.done ? " done" : "");
 
     // ヘッダー行
     const head = document.createElement("div");
@@ -636,8 +640,8 @@ async function renderSeminarCards() {
       if (s.staticStats) {
         stats.innerHTML = `
           <div class="seminar-stat"><div class="seminar-stat-label">申込者数</div><div class="seminar-stat-value">${s.staticStats.apply}名</div></div>
-          <div class="seminar-stat"><div class="seminar-stat-label">リアルタイム参加</div><div class="seminar-stat-value">${s.staticStats.realtime}名</div></div>
-          <div class="seminar-stat"><div class="seminar-stat-label">アーカイブのみ</div><div class="seminar-stat-value">${s.staticStats.archive}名</div></div>
+          <div class="seminar-stat"><div class="seminar-stat-label">事前申込者</div><div class="seminar-stat-value">${s.staticStats.realtime}名</div></div>
+          <div class="seminar-stat"><div class="seminar-stat-label">アーカイブ申込</div><div class="seminar-stat-value">${s.staticStats.archive}名</div></div>
         `;
         card.appendChild(stats);
         if (s.staticNames && s.staticNames.length > 0) {
@@ -658,7 +662,7 @@ async function renderSeminarCards() {
           pane.hidden = true;
           pane.className = "seminar-names-pane";
           pane.innerHTML = s.staticNames.map((e) =>
-            `<span class="seminar-name-tag">${e.name}<span class="seminar-referrer">${e.type === "realtime" ? "リアルタイム" : "アーカイブ"}</span></span>`
+            `<span class="seminar-name-tag">${e.name}<span class="seminar-referrer">${e.type === "realtime" ? "事前申込者" : "アーカイブ申込"}</span></span>`
           ).join("");
           card.appendChild(btn);
           card.appendChild(pane);
@@ -669,11 +673,11 @@ async function renderSeminarCards() {
         const entries = byDate[s.date] || [];
         const withRef = entries.filter((e) => e.referrer).length;
         stats.innerHTML = `<div class="seminar-stat"><div class="seminar-stat-label">申込者数</div><div class="seminar-stat-value">${entries.length}名</div></div>` +
-          (withRef ? `<div class="seminar-stat"><div class="seminar-stat-label">紹介あり</div><div class="seminar-stat-value">${withRef}名</div></div>` : "");
+          (!s.hideReferrer && withRef ? `<div class="seminar-stat"><div class="seminar-stat-label">紹介あり</div><div class="seminar-stat-value">${withRef}名</div></div>` : "");
         const names = entries;
 
         // 申込者一覧アコーディオン
-        if (names.length > 0) {
+        if (names.length > 0 && !s.hideReferrer) {
           const id = `seminar-acc-${accId++}`;
           const btn = document.createElement("button");
           btn.className = "accordion-btn";
@@ -727,12 +731,22 @@ const SURVEY_QUESTIONS = [
 ];
 
 async function loadShinkiMembers() {
-  const [premRows, basicRows, surveyPremRows, surveyBasicRows] = await Promise.all([
-    fetchGvizCsv(SHINKI_PREMIUM_SHEET_ID),
-    fetchGvizCsv(SHINKI_BASIC_SHEET_ID),
-    fetchGvizCsv(SHINKI_SURVEY_SHEET_ID, "プレミアム").catch(() => []),
-    fetchGvizCsv(SHINKI_SURVEY_SHEET_ID, "ベーシック").catch(() => []),
+  // fetchGvizTableでJSON取得（CORSに対応）
+  function tableToRows(table) {
+    return (table.rows || []).map((r) => (r.c || []).map((c) => cellValue(c) || ""));
+  }
+
+  const [premTable, basicTable, surveyPremTable, surveyBasicTable] = await Promise.all([
+    fetchGvizTable(SHINKI_PREMIUM_SHEET_ID, undefined, true).catch(() => ({rows:[]})),
+    fetchGvizTable(SHINKI_BASIC_SHEET_ID, undefined, true).catch(() => ({rows:[]})),
+    fetchGvizTable(SHINKI_SURVEY_SHEET_ID, "プレミアム", true).catch(() => ({rows:[]})),
+    fetchGvizTable(SHINKI_SURVEY_SHEET_ID, "ベーシック", true).catch(() => ({rows:[]})),
   ]);
+
+  const premRows = tableToRows(premTable);
+  const basicRows = tableToRows(basicTable);
+  const surveyPremRows = tableToRows(surveyPremTable);
+  const surveyBasicRows = tableToRows(surveyBasicTable);
 
   // アンケートをメールで索引（最新回答を採用）
   const surveyMap = new Map();
