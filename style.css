@@ -569,9 +569,11 @@ table.withdrawal-table td.withdrawal-reason {
 }
 .seminar-names-pane {
   margin-top: 12px;
-  display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+.seminar-names-pane:not([hidden]) {
+  display: flex;
 }
 .seminar-name-tag {
   display: inline-flex;
