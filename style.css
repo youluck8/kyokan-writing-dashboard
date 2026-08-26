@@ -465,8 +465,18 @@ table.withdrawal-table td.withdrawal-reason {
 }
 
 /* --- セクションアコーディオン（4期→5期タブ内） --- */
+.section-accordion-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-accordion-header .sheet-link {
+  margin-left: auto;
+  flex-shrink: 0;
+}
 .section-accordion-btn {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   text-align: left;
   background: none;
   border: none;

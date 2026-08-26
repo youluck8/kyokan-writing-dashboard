@@ -1079,7 +1079,7 @@ document.querySelectorAll(".section-accordion-btn").forEach((btn) => {
     if (!pane) return;
     const isOpen = !pane.hidden;
     pane.hidden = isOpen;
-    btn.textContent = (isOpen ? "▶ " : "▼ ") + btn.textContent.replace(/^[▶▼]\s*/, "");
+    btn.classList.toggle("active", !isOpen);
   });
 });
 
