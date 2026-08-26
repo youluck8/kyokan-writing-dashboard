@@ -505,21 +505,19 @@ function updateLastUpdated(dateStrings) {
   if (latest) el.textContent = latest;
 }
 
-// 退会者リスト: 1行目は注記、2行目がヘッダー(NO./氏名/メール/コース/退会理由/メモ)
+// 退会者リスト: 1行目は注記、2行目がヘッダー(NO./氏名/メールアドレス/コース/退会日/退会理由/備考)
 async function loadWithdrawals() {
   const table = await fetchGvizTable(WITHDRAWAL_SHEET_ID, undefined, false);
-  // 1行目が注記行、2行目がヘッダーのため、cols は注記行のラベルになっている場合がある
-  // 安全のため行インデックスで直接読む (headers=falseの場合、cols[i].labelは列番号"Col1"等になる)
-  // gvizはtqx=out:jsonで返す際、1行目をヘッダーと判定することがある。
-  // 実際のデータ行だけを取り出すため、氏名セル(index 1)が空でない行のみ使用する
   const rows = (table.rows || []).map((r) => {
     const c = r.c || [];
     return {
       no: cellValue(c[0]),
       name: cellValue(c[1]),
-      course: cellValue(c[2]),
-      reason: cellValue(c[3]),
-      memo: cellValue(c[4]),
+      // c[2] はメールアドレス（表示しない）
+      course: cellValue(c[3]),
+      date: cellValue(c[4]),
+      reason: cellValue(c[5]),
+      memo: cellValue(c[6]),
     };
   }).filter((r) => r.name && r.name !== "氏名" && r.no !== "NＯ．" && r.no !== "NO.");
 
@@ -530,19 +528,22 @@ async function loadWithdrawals() {
   if (!tbody) return;
   tbody.innerHTML = "";
   if (rows.length === 0) {
-    tbody.appendChild(emptyRow(4));
+    tbody.appendChild(emptyRow(5));
     return;
   }
   rows.forEach((r) => {
     const tr = document.createElement("tr");
-    [r.name, r.course, r.reason, r.memo].forEach((val, i) => {
+    const cells = [
+      { val: r.name, cls: "" },
+      { val: r.course, cls: "" },
+      { val: r.date, cls: "" },
+      { val: r.reason, cls: "withdrawal-reason" },
+      { val: r.memo, cls: "" },
+    ];
+    cells.forEach(({ val, cls }) => {
       const td = document.createElement("td");
-      if (i === 2) {
-        td.className = "withdrawal-reason";
-        td.textContent = val || "-";
-      } else {
-        td.textContent = val || "-";
-      }
+      if (cls) td.className = cls;
+      td.textContent = val || "-";
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
