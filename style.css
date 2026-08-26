@@ -126,6 +126,8 @@ h1 {
   transition: background 0.15s ease;
 }
 .sheet-link:hover { background: var(--nred-dark); text-decoration: none; }
+.sheet-link.blue { background: var(--blue); }
+.sheet-link.blue:hover { background: #004f8a; text-decoration: none; }
 
 .refresh-btn {
   background: var(--soft);
