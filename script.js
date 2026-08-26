@@ -241,6 +241,7 @@ async function loadData() {
   document.getElementById("basicSheetLink").href = sheetLinkUrl(BASIC_SHEET_ID);
   document.getElementById("nonContinuerSheetLink").href = sheetLinkUrl(NON_CONTINUER_SHEET_ID);
 
+  loadStepMailStatus().catch((err) => console.error("stepmail load failed", err));
   await renderSeminarCards();
 
   const [premium, basic] = await Promise.all([
@@ -575,8 +576,81 @@ const MARLIN_EMAILS = new Set([
   "1433.shizuko@gmail.com","yyshinshin0317@gmail.com",
 ]);
 
+// ==== ステップメール配信状況 ====
+async function loadStepMailStatus() {
+  const tbody = document.getElementById("tbody-stepmail");
+  if (!tbody) return;
+
+  const table = await fetchGvizTable(STEPMAIL_SHEET_ID, undefined, true);
+  // 1行目がスプレッドシートタイトル行、2行目がサブヘッダー行のため
+  // c[0]が"対象"の行はスキップして実データのみ取り出す
+  const rows = (table.rows || [])
+    .map((r) => (r.c || []).map((c) => cellValue(c) || ""))
+    .filter((r) => r[1] && r[1] !== "" && r[0] !== "対象");
+
+  // 今日の日付を「8月26日」形式に変換して照合
+  const now = new Date();
+  const todayLabel = `${now.getMonth() + 1}月${now.getDate()}日`;
+
+  tbody.innerHTML = "";
+  if (rows.length === 0) {
+    tbody.appendChild(emptyRow(5));
+    return;
+  }
+
+  rows.forEach((r) => {
+    const dateLabel = r[1] || "";
+    const sender = r[4] || "";
+    const subject = r[5] || "";
+    const totalCount = r[12] || "";
+    const openRate = r[13] || "";
+    const isToday = dateLabel === todayLabel;
+
+    const tr = document.createElement("tr");
+    if (isToday) tr.classList.add("stepmail-today");
+
+    const tdDate = document.createElement("td");
+    tdDate.textContent = dateLabel;
+    if (isToday) {
+      const badge = document.createElement("span");
+      badge.className = "stepmail-today-badge";
+      badge.textContent = "本日";
+      tdDate.appendChild(document.createTextNode(" "));
+      tdDate.appendChild(badge);
+    }
+
+    const tdSender = document.createElement("td");
+    tdSender.textContent = sender;
+    tdSender.className = sender.includes("織田") ? "sender-oda" : "sender-mineyama";
+
+    const tdSubject = document.createElement("td");
+    tdSubject.textContent = subject || "-";
+
+    const tdCount = document.createElement("td");
+    tdCount.textContent = totalCount ? `${Number(totalCount).toLocaleString()}通` : "結果待ち";
+    tdCount.className = totalCount ? "" : "stepmail-pending";
+
+    const tdRate = document.createElement("td");
+    tdRate.textContent = openRate || (totalCount ? "-" : "結果待ち");
+    if (openRate) {
+      const rate = parseFloat(openRate);
+      tdRate.className = rate >= 45 ? "openrate-high" : rate >= 35 ? "openrate-mid" : "openrate-low";
+    } else {
+      tdRate.className = "stepmail-pending";
+    }
+
+    tr.appendChild(tdDate);
+    tr.appendChild(tdSender);
+    tr.appendChild(tdSubject);
+    tr.appendChild(tdCount);
+    tr.appendChild(tdRate);
+    tbody.appendChild(tr);
+  });
+}
+
 // ==== プロモーション：実施セミナー実績カード ====
 const SETSUMEIKAI_SHEET_ID = "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0";
+const STEPMAIL_SHEET_ID = "1DFuxfID3nIkS1qxKTycr3-Y5auJ2RXHoYTA3zJ02SrQ";
 
 async function renderSeminarCards() {
   const container = document.getElementById("promo-seminar-list");

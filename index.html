@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 Not Found</title>
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 
@@ -61,6 +61,19 @@
 
   <!-- プロモーションタブ：実施セミナー実績 -->
   <div class="tab-pane active" id="tab-promo">
+    <section class="section">
+      <div class="section-head">
+        <h2>ステップメール配信状況</h2>
+      </div>
+      <div class="table-scroll">
+        <table class="member-list stepmail-table">
+          <thead>
+            <tr><th>日付</th><th>配信者</th><th>件名</th><th>配信数（合計）</th><th>開封率（合計）</th></tr>
+          </thead>
+          <tbody id="tbody-stepmail"></tbody>
+        </table>
+      </div>
+    </section>
     <section class="section">
       <div class="section-head">
         <h2>実施セミナー・説明会 実績</h2>
@@ -173,6 +186,6 @@
 </div>
 </div>
 
-<script src="script.js?v=54"></script>
+<script src="script.js?v=55"></script>
 </body>
 </html>
