@@ -82,14 +82,19 @@ body {
   background: var(--paper);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 40px 40px 36px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-  gap: 40px;
-  align-items: start;
+  padding: 28px 36px 24px;
 }
+.top-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.top-title-left h1 { margin: 0; }
 @media (max-width: 760px) {
-  .top { grid-template-columns: 1fr; padding: 28px; gap: 24px; }
+  .top { padding: 20px; }
+  .top-title-row { flex-wrap: wrap; }
 }
 
 h1 {
@@ -122,18 +127,19 @@ h1 {
 }
 .sheet-link:hover { background: var(--nred-dark); text-decoration: none; }
 
-.top-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
 .refresh-btn {
   background: var(--soft);
   color: var(--ink);
   border: 1px solid var(--line);
   cursor: pointer;
   font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s;
 }
 .refresh-btn:hover { background: #ececec; }
 .refresh-btn:disabled { opacity: 0.6; cursor: default; }
@@ -154,14 +160,20 @@ h1 {
 
 .summary {
   display: grid;
-  gap: 14px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .summary { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  .summary { grid-template-columns: repeat(2, 1fr); }
 }
 .summary-item {
-  border-radius: var(--radius);
+  border-radius: 14px;
   background: var(--soft);
-  padding: 20px 22px;
+  padding: 14px 16px 14px 20px;
   position: relative;
-  padding-left: 26px;
 }
 .summary-item::before {
   content: "";
@@ -183,10 +195,11 @@ h1 {
   text-transform: uppercase;
 }
 .summary-value {
-  margin-top: 8px;
-  font-size: 20px;
+  margin-top: 6px;
+  font-size: 16px;
   font-weight: 900;
   line-height: 1.5;
+  word-break: break-all;
 }
 
 .kpi-breakdown {

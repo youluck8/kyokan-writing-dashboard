@@ -236,7 +236,6 @@ function appendLinkifiedText(container, text) {
 
 // 見出しは常にタブ名の設定(定数)と同じ文字列にする。表示名とフェッチ先のズレを防ぐため。
 async function loadData() {
-  document.getElementById("sheetLink").href = sheetLinkUrl(SHEET_ID);
   document.getElementById("premiumSheetLink").href = sheetLinkUrl(PREMIUM_SHEET_ID);
   document.getElementById("basicSheetLink").href = sheetLinkUrl(BASIC_SHEET_ID);
   document.getElementById("nonContinuerSheetLink").href = sheetLinkUrl(NON_CONTINUER_SHEET_ID);
