@@ -581,8 +581,6 @@ const MARLIN_EMAILS = new Set([
 // c[0]=対象, c[1]=日付, c[2]=曜日, c[3]=時刻, c[4]=配信者名, c[5]=件名, c[6]=原稿(本文)
 // c[7]=MYASP/配信先1, c[8]=配信数1, c[9]=開封率1, c[10]=配信数2, c[11]=開封率2, c[12]=合計配信数, c[13]=合計開封率
 
-let _stepmailAccId = 0;
-
 function buildStepMailTable(rows, tbody, colDefs) {
   // 今日の日付を「8月26日」形式で照合
   const now = new Date();
@@ -601,9 +599,7 @@ function buildStepMailTable(rows, tbody, colDefs) {
     const time = r[3] || "";
     const sender = r[4] || "";
     const subject = r[5] || "";
-    const body = r[6] || "";
     const isToday = dateLabel === todayLabel;
-    const accId = `sm-acc-${_stepmailAccId++}`;
 
     // メイン行
     const tr = document.createElement("tr");
@@ -631,24 +627,9 @@ function buildStepMailTable(rows, tbody, colDefs) {
     tdSender.textContent = sender;
     tdSender.className = sender.includes("織田") ? "sender-oda" : "sender-mineyama";
 
-    // 件名セル（本文があればアコーディオンボタン付き）
+    // 件名セル
     const tdSubject = document.createElement("td");
-    const subjectText = document.createElement("span");
-    subjectText.textContent = subject || "-";
-    tdSubject.appendChild(subjectText);
-    // 本文ボタンは常に表示（本文未入力でも）
-    const btn = document.createElement("button");
-    btn.className = "accordion-btn";
-    btn.style.marginLeft = "8px";
-    btn.textContent = "本文";
-    btn.addEventListener("click", () => {
-      const pane = document.getElementById(accId);
-      if (!pane) return;
-      const open = !pane.hidden;
-      pane.hidden = open;
-      btn.textContent = open ? "本文" : "閉じる";
-    });
-    tdSubject.appendChild(btn);
+    tdSubject.textContent = subject || "-";
 
     tr.appendChild(tdDate);
     tr.appendChild(tdSender);
@@ -672,18 +653,6 @@ function buildStepMailTable(rows, tbody, colDefs) {
     });
 
     tbody.appendChild(tr);
-
-    // 本文アコーディオン行（常に生成。本文未入力は案内文を表示）
-    const trAcc = document.createElement("tr");
-    trAcc.id = accId;
-    trAcc.hidden = true;
-    const tdAcc = document.createElement("td");
-    tdAcc.colSpan = colDefs.length + 3;
-    tdAcc.className = "stepmail-body-cell";
-    tdAcc.textContent = body || "（本文未入力 — スプレッドシートの原稿列に貼り付けると表示されます）";
-    if (!body) tdAcc.style.color = "#aaa";
-    trAcc.appendChild(tdAcc);
-    tbody.appendChild(trAcc);
   });
 }
 
