@@ -481,6 +481,16 @@ table.withdrawal-table td.withdrawal-reason {
   gap: 10px;
   letter-spacing: -0.01em;
 }
+.section-accordion-btn::before {
+  content: "▶";
+  font-size: 13px;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.section-accordion-btn.active::before {
+  transform: rotate(90deg);
+}
 .section-accordion-btn:hover { color: var(--nred); }
 .section-accordion-pane { margin-top: 20px; }
 .acc-sheet-link {

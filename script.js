@@ -635,20 +635,19 @@ function buildStepMailTable(rows, tbody, colDefs) {
     const subjectText = document.createElement("span");
     subjectText.textContent = subject || "-";
     tdSubject.appendChild(subjectText);
-    if (body) {
-      const btn = document.createElement("button");
-      btn.className = "accordion-btn";
-      btn.style.marginLeft = "8px";
-      btn.textContent = "▼ 本文";
-      btn.addEventListener("click", () => {
-        const pane = document.getElementById(accId);
-        if (!pane) return;
-        const open = !pane.hidden;
-        pane.hidden = open;
-        btn.textContent = open ? "▼ 本文" : "▲ 閉じる";
-      });
-      tdSubject.appendChild(btn);
-    }
+    // 本文ボタンは常に表示（本文未入力でも）
+    const btn = document.createElement("button");
+    btn.className = "accordion-btn";
+    btn.style.marginLeft = "8px";
+    btn.textContent = "本文";
+    btn.addEventListener("click", () => {
+      const pane = document.getElementById(accId);
+      if (!pane) return;
+      const open = !pane.hidden;
+      pane.hidden = open;
+      btn.textContent = open ? "本文" : "閉じる";
+    });
+    tdSubject.appendChild(btn);
 
     tr.appendChild(tdDate);
     tr.appendChild(tdSender);
@@ -673,18 +672,17 @@ function buildStepMailTable(rows, tbody, colDefs) {
 
     tbody.appendChild(tr);
 
-    // 本文アコーディオン行
-    if (body) {
-      const trAcc = document.createElement("tr");
-      trAcc.id = accId;
-      trAcc.hidden = true;
-      const tdAcc = document.createElement("td");
-      tdAcc.colSpan = colDefs.length + 3;
-      tdAcc.className = "stepmail-body-cell";
-      tdAcc.textContent = body;
-      trAcc.appendChild(tdAcc);
-      tbody.appendChild(trAcc);
-    }
+    // 本文アコーディオン行（常に生成。本文未入力は案内文を表示）
+    const trAcc = document.createElement("tr");
+    trAcc.id = accId;
+    trAcc.hidden = true;
+    const tdAcc = document.createElement("td");
+    tdAcc.colSpan = colDefs.length + 3;
+    tdAcc.className = "stepmail-body-cell";
+    tdAcc.textContent = body || "（本文未入力 — スプレッドシートの原稿列に貼り付けると表示されます）";
+    if (!body) tdAcc.style.color = "#aaa";
+    trAcc.appendChild(tdAcc);
+    tbody.appendChild(trAcc);
   });
 }
 
@@ -739,8 +737,11 @@ async function renderSeminarCards() {
     const table = await fetchGvizTable(SETSUMEIKAI_SHEET_ID, undefined, true);
     (table.rows || []).forEach((r) => {
       const c = r.c || [];
-      const rawDate = cellValue(c[1]);
-      const dateStr = rawDate ? rawDate.trim().substring(0, 10) : "";
+      // gviz日付セルはv="Date(year,month,day,...)"形式のため normalizedDate で確実にYYYY-MM-DDへ変換
+      const dateStr = normalizedDate(c[1]) || (() => {
+        const s = cellValue(c[1]).trim().substring(0, 10).replace(/\//g, "-");
+        return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
+      })();
       if (!dateStr) return;
       if (!byDate[dateStr]) byDate[dateStr] = [];
       const sei = cellValue(c[3]) || "";
