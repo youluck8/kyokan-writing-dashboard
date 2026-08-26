@@ -241,6 +241,7 @@ async function loadData() {
   document.getElementById("nonContinuerSheetLink").href = sheetLinkUrl(NON_CONTINUER_SHEET_ID);
 
   loadStepMailStatus().catch((err) => console.error("stepmail load failed", err));
+  loadEnquete().catch((err) => console.error("enquete load failed", err));
   await renderSeminarCards();
 
   const [premium, basic] = await Promise.all([
@@ -718,6 +719,104 @@ async function loadStepMailStatus() {
       { idx: 11, isRate: true, label: "開封率" },
       { idx: 12, isRate: true, label: "合計開封率" },
     ]);
+  }
+}
+
+// ==== 事前アンケート ====
+const ENQUETE_SHEET_ID = "16iJ3SESmXqzxqxq9g1ufuAXhX00F_COv_HAEgHox90Q";
+
+async function loadEnquete() {
+  const container = document.getElementById("enquete-list");
+  const summaryEl = document.getElementById("summary-enquete");
+  if (!container) return;
+
+  const table = await fetchGvizTable(ENQUETE_SHEET_ID, undefined, true).catch(() => null);
+  if (!table) {
+    container.innerHTML = `<p class="roster-summary">読み込みに失敗しました</p>`;
+    return;
+  }
+
+  const rows = (table.rows || [])
+    .map((r) => {
+      const c = r.c || [];
+      return {
+        timestamp: cellValue(c[0]),
+        name: cellValue(c[2]),
+        q1: cellValue(c[3]),
+        q2: cellValue(c[4]),
+        q3: cellValue(c[5]),
+        q4: cellValue(c[6]),
+      };
+    })
+    .filter((r) => r.name);
+
+  if (summaryEl) summaryEl.textContent = `${rows.length}名が回答`;
+
+  let allItems = [];
+
+  function render(filtered) {
+    container.innerHTML = "";
+    if (filtered.length === 0) {
+      container.innerHTML = `<p class="roster-summary">該当なし</p>`;
+      return;
+    }
+    filtered.forEach((row, i) => {
+      const id = `enq-${i}`;
+      const card = document.createElement("div");
+      card.className = "enquete-card";
+
+      const header = document.createElement("button");
+      header.className = "enquete-card-btn";
+      header.textContent = row.name;
+      header.setAttribute("aria-expanded", "false");
+
+      const body = document.createElement("div");
+      body.className = "enquete-card-body";
+      body.hidden = true;
+      body.id = id;
+
+      const questions = [
+        { label: "4期でやったこと・一番の収穫", text: row.q1 },
+        { label: "4期でやりきれなかったこと", text: row.q2 },
+        { label: "5期でやりたいこと", text: row.q3 },
+        { label: "質問・その他", text: row.q4 },
+      ];
+      questions.forEach(({ label, text }) => {
+        if (!text) return;
+        const dl = document.createElement("dl");
+        dl.className = "enquete-qa";
+        const dt = document.createElement("dt");
+        dt.textContent = label;
+        const dd = document.createElement("dd");
+        dd.textContent = text;
+        dl.appendChild(dt);
+        dl.appendChild(dd);
+        body.appendChild(dl);
+      });
+
+      header.addEventListener("click", () => {
+        const open = !body.hidden;
+        body.hidden = open;
+        header.classList.toggle("open", !open);
+        header.setAttribute("aria-expanded", String(!open));
+      });
+
+      card.appendChild(header);
+      card.appendChild(body);
+      container.appendChild(card);
+    });
+  }
+
+  allItems = rows;
+  render(allItems);
+
+  const searchEl = document.getElementById("enquete-search");
+  if (searchEl) {
+    searchEl.addEventListener("input", () => {
+      const q = searchEl.value.trim();
+      if (!q) { render(allItems); return; }
+      render(allItems.filter((r) => r.name.includes(q)));
+    });
   }
 }
 
