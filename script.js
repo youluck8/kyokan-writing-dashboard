@@ -241,8 +241,10 @@ async function loadData() {
   document.getElementById("nonContinuerSheetLink").href = sheetLinkUrl(NON_CONTINUER_SHEET_ID);
 
   loadStepMailStatus().catch((err) => console.error("stepmail load failed", err));
-  loadEnquete().catch((err) => console.error("enquete load failed", err));
   await renderSeminarCards();
+
+  // アンケートを先に読み込んでからメンバー名簿を描画する（突合のため）
+  await loadEnquete().catch((err) => console.error("enquete load failed", err));
 
   const [premium, basic] = await Promise.all([
     loadMemberSheet(PREMIUM_SHEET_ID, "プレミアム", "summary-premium", "tbody-premium-list").catch((err) => {
