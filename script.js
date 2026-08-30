@@ -929,11 +929,17 @@ async function renderSeminarCards() {
     return { date: d, label: `${parseInt(m)}/${parseInt(day)} 説明会`, hasSheet: true, hideReferrer: true };
   });
 
-  const seminars = [
+  const allSeminars = [
     { date: "2026-09-03", label: "9/3 Claude Code体験会", claudeCodeEvent: true },
     ...autoSeminars,
     ...fixedSeminars,
   ];
+
+  // 終了・中止を下に、未来分は直近順（昇順）、過去分は新しい順（降順）
+  const isDone = (s) => s.cancelled || s.done || new Date(s.date) < today;
+  const upcoming = allSeminars.filter((s) => !isDone(s)).sort((a, b) => a.date.localeCompare(b.date));
+  const past = allSeminars.filter((s) => isDone(s)).sort((a, b) => b.date.localeCompare(a.date));
+  const seminars = [...upcoming, ...past];
 
   let accId = 0;
   container.innerHTML = "";
