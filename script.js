@@ -852,6 +852,7 @@ async function loadEnquete() {
 // ==== プロモーション：実施セミナー実績カード ====
 const SETSUMEIKAI_SHEET_ID = "1ezLaC6ckT9VPgQqpeAl5sxzBED1oABOctS7Bb3SYNM0";
 const STEPMAIL_SHEET_ID = "1DFuxfID3nIkS1qxKTycr3-Y5auJ2RXHoYTA3zJ02SrQ";
+const CLAUDECODE_EVENT_SHEET_ID = "1D-NTEIdm_aHnXgrYhL0OO6_KcPvZx1M7469g9XSt_MI";
 
 async function renderSeminarCards() {
   const container = document.getElementById("promo-seminar-list");
@@ -882,8 +883,25 @@ async function renderSeminarCards() {
     console.error("setsumeikai sheet load failed", e);
   }
 
+  // Claude Code体験会シートを別途読み込み
+  let claudeCodeNames = [];
+  try {
+    const table2 = await fetchGvizTable(CLAUDECODE_EVENT_SHEET_ID, undefined, true);
+    (table2.rows || []).forEach((r) => {
+      const c = r.c || [];
+      const sei = cellValue(c[2]) || "";
+      const mei = cellValue(c[3]) || "";
+      const name = (sei + " " + mei).trim();
+      if (name) claudeCodeNames.push({ name });
+    });
+  } catch (e) {
+    console.error("claudecode event sheet load failed", e);
+  }
+
   const today = new Date();
   const seminars = [
+    { date: "2026-09-03", label: "9/3 Claude Code体験会", claudeCodeEvent: true },
+    { date: "2026-09-01", label: "9/1 説明会", hasSheet: true, hideReferrer: true },
     { date: "2026-08-30", label: "8/30 説明会", hasSheet: true, hideReferrer: true },
     { date: "2026-08-28", label: "8/28 説明会", cancelled: true, cancelNote: "中止", done: true },
     { date: "2026-07-31", label: "7/31 峯山×まーりん合同セミナー",
@@ -910,7 +928,60 @@ async function renderSeminarCards() {
     head.className = "seminar-card-head";
     head.innerHTML = `<span class="seminar-date">${s.label}</span>` +
       (s.cancelled ? `<span class="seminar-badge cancelled">${s.cancelNote || "中止"}</span>` : "");
+
+    // シートリンクボタン
+    const headLinks = document.createElement("div");
+    headLinks.style.cssText = "display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;";
+    if (s.claudeCodeEvent) {
+      const a = document.createElement("a");
+      a.href = `https://docs.google.com/spreadsheets/d/${CLAUDECODE_EVENT_SHEET_ID}/edit`;
+      a.target = "_blank"; a.rel = "noopener";
+      a.className = "sheet-link small-link";
+      a.textContent = "無料イベントシートを開く →";
+      headLinks.appendChild(a);
+    } else if (s.hasSheet) {
+      const a = document.createElement("a");
+      a.href = `https://docs.google.com/spreadsheets/d/${SETSUMEIKAI_SHEET_ID}/edit`;
+      a.target = "_blank"; a.rel = "noopener";
+      a.className = "sheet-link small-link";
+      a.textContent = "説明会シートを開く →";
+      headLinks.appendChild(a);
+    }
+    if (headLinks.children.length > 0) head.appendChild(headLinks);
+
     card.appendChild(head);
+
+    if (s.claudeCodeEvent) {
+      const stats = document.createElement("div");
+      stats.className = "seminar-stats";
+      stats.innerHTML = `<div class="seminar-stat"><div class="seminar-stat-label">申込者数</div><div class="seminar-stat-value">${claudeCodeNames.length}名</div></div>`;
+      card.appendChild(stats);
+      if (claudeCodeNames.length > 0) {
+        const id = `seminar-acc-${accId++}`;
+        const btn = document.createElement("button");
+        btn.className = "accordion-btn";
+        btn.style.marginTop = "12px";
+        btn.textContent = "▼ 申込者一覧";
+        btn.addEventListener("click", () => {
+          const pane = document.getElementById(id);
+          if (!pane) return;
+          const open = !pane.hidden;
+          pane.hidden = open;
+          btn.textContent = open ? "▼ 申込者一覧" : "▲ 閉じる";
+        });
+        const pane = document.createElement("div");
+        pane.id = id;
+        pane.hidden = true;
+        pane.className = "seminar-names-pane";
+        pane.innerHTML = claudeCodeNames.map((n) =>
+          `<span class="seminar-name-tag">${n.name}</span>`
+        ).join("");
+        card.appendChild(btn);
+        card.appendChild(pane);
+      }
+      container.appendChild(card);
+      return;
+    }
 
     if (!s.cancelled) {
       const stats = document.createElement("div");
