@@ -899,10 +899,10 @@ async function renderSeminarCards() {
   }
 
   const today = new Date();
-  const seminars = [
-    { date: "2026-09-03", label: "9/3 Claude Code体験会", claudeCodeEvent: true },
-    { date: "2026-09-01", label: "9/1 説明会", hasSheet: true, hideReferrer: true },
-    { date: "2026-08-30", label: "8/30 説明会", hasSheet: true, hideReferrer: true },
+
+  // 固定カード（過去分・キャンセル等、手動管理）
+  const fixedDates = new Set(["2026-08-28","2026-07-31","2026-08-16","2026-08-15","2026-08-14"]);
+  const fixedSeminars = [
     { date: "2026-08-28", label: "8/28 説明会", cancelled: true, cancelNote: "中止", done: true },
     { date: "2026-07-31", label: "7/31 峯山×まーりん合同セミナー",
       staticStats: { apply: 62, realtime: 44, archive: 18 },
@@ -913,6 +913,22 @@ async function renderSeminarCards() {
     { date: "2026-08-16", label: "8/16 説明会", hasSheet: true },
     { date: "2026-08-15", label: "8/15 説明会", hasSheet: true },
     { date: "2026-08-14", label: "8/14 説明会", hasSheet: true },
+  ];
+
+  // シートに存在する日付を自動でカードに追加（固定分除く）
+  const sheetDates = Object.keys(byDate)
+    .filter((d) => !fixedDates.has(d))
+    .sort((a, b) => b.localeCompare(a));
+
+  const autoSeminars = sheetDates.map((d) => {
+    const [y, m, day] = d.split("-");
+    return { date: d, label: `${parseInt(m)}/${parseInt(day)} 説明会`, hasSheet: true, hideReferrer: true };
+  });
+
+  const seminars = [
+    { date: "2026-09-03", label: "9/3 Claude Code体験会", claudeCodeEvent: true },
+    ...autoSeminars,
+    ...fixedSeminars,
   ];
 
   let accId = 0;
