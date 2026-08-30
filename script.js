@@ -901,8 +901,10 @@ async function renderSeminarCards() {
   const today = new Date();
 
   // 固定カード（過去分・キャンセル等、手動管理）
-  const fixedDates = new Set(["2026-09-01","2026-08-30","2026-08-28","2026-07-31","2026-08-16","2026-08-15","2026-08-14"]);
+  const fixedDates = new Set(["2026-09-07","2026-09-06","2026-09-01","2026-08-30","2026-08-28","2026-07-31","2026-08-16","2026-08-15","2026-08-14"]);
   const fixedSeminars = [
+    { date: "2026-09-07", label: "9/7 説明会", hasSheet: true, hideReferrer: true },
+    { date: "2026-09-06", label: "9/6 説明会", hasSheet: true, hideReferrer: true },
     { date: "2026-09-01", label: "9/1 説明会", cancelled: true, cancelNote: "中止", done: true },
     { date: "2026-08-30", label: "8/30 説明会", cancelled: true, cancelNote: "中止", done: true },
     { date: "2026-08-28", label: "8/28 説明会", cancelled: true, cancelNote: "中止", done: true },
